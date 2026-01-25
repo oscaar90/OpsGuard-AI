@@ -1,0 +1,35 @@
+[tool.poetry]
+name = "opsguard-ai"
+version = "0.1.0"
+description = "AI-powered DevOps guardian GitHub Action"
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+packages = [{include = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+typer = "^0.9.0"
+pydantic = "^2.5.0"
+gitpython = "^3.1.40"
+openai = "^1.6.0"
+pyyaml = "^6.0.1"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.0"
+black = "^23.12.0"
+
+[tool.poetry.scripts]
+opsguard = "src.main:app"
+
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+include = '\.pyi?$'
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
