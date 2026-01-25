@@ -5,7 +5,7 @@
 
 ## Architecture (Day 1 Status)
 
-
+```mermaid
 graph TD
     User[Developer] -->|Push/PR| GH[GitHub Actions]
     GH -->|Trigger| Docker[OpsGuard Container]
@@ -19,3 +19,4 @@ graph TD
     end
     
     Diff --> Output[Stdout / Report]
+```
