@@ -1,0 +1,55 @@
+# OpsGuard-AI Security Policy Configuration
+# This file defines the blocklist patterns for the Local Gatekeeper (ADR-0001)
+
+blocklist:
+  # AWS Access Key ID (starts with AKIA)
+  - name: "AWS Access Key"
+    pattern: "AKIA[0-9A-Z]{16}"
+
+  # AWS Secret Access Key (40 character base64)
+  - name: "AWS Secret Key"
+    pattern: "['\"][0-9a-zA-Z/+]{40}['\"]"
+
+  # RSA Private Key
+  - name: "RSA Private Key"
+    pattern: "-----BEGIN RSA PRIVATE KEY-----"
+
+  # Generic Private Key (DSA, EC, OPENSSH, etc.)
+  - name: "Private Key"
+    pattern: "-----BEGIN (?:DSA|EC|OPENSSH|PGP) PRIVATE KEY-----"
+
+  # GitHub Personal Access Token (classic)
+  - name: "GitHub PAT (Classic)"
+    pattern: "ghp_[0-9a-zA-Z]{36}"
+
+  # GitHub Fine-grained PAT
+  - name: "GitHub PAT (Fine-grained)"
+    pattern: "github_pat_[0-9a-zA-Z]{22}_[0-9a-zA-Z]{59}"
+
+  # GitHub OAuth Access Token
+  - name: "GitHub OAuth Token"
+    pattern: "gho_[0-9a-zA-Z]{36}"
+
+  # GitHub App Token
+  - name: "GitHub App Token"
+    pattern: "ghu_[0-9a-zA-Z]{36}"
+
+  # Generic API Key patterns
+  - name: "Generic API Key"
+    pattern: "(?i)(api[_-]?key|apikey)['\"]?\\s*[:=]\\s*['\"][0-9a-zA-Z]{20,}['\"]"
+
+  # Generic Secret patterns
+  - name: "Generic Secret"
+    pattern: "(?i)(secret|password|passwd|pwd)['\"]?\\s*[:=]\\s*['\"][^'\"]{8,}['\"]"
+
+  # Slack Token
+  - name: "Slack Token"
+    pattern: "xox[baprs]-[0-9a-zA-Z]{10,48}"
+
+  # Stripe API Key
+  - name: "Stripe API Key"
+    pattern: "sk_live_[0-9a-zA-Z]{24}"
+
+  # Google API Key
+  - name: "Google API Key"
+    pattern: "AIza[0-9A-Za-z\\-_]{35}"
