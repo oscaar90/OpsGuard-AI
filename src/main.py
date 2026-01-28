@@ -5,6 +5,7 @@ from typing import Annotated
 
 import typer
 
+from src.ai import AIEngine, AIEngineError
 from src.ingest import GitIngestError, GitManager
 from src.security import SecurityPolicy, SecurityPolicyError
 
@@ -81,16 +82,92 @@ def scan(
         )
         sys.exit(1)
 
-    # All clear - proceed
+    # Step 5: Regex check passed - proceed to AI analysis
     typer.secho(
-        "✅ Security Check Passed",
+        "✅ Regex Check Passed",
         fg=typer.colors.GREEN,
         bold=True,
     )
     typer.secho(
-        "No hardcoded secrets detected. Safe to proceed with LLM analysis.",
+        "No hardcoded secrets detected. Proceeding with AI analysis...\n",
         fg=typer.colors.GREEN,
     )
+
+    # Step 6: Initialize AI Engine and run contextual analysis
+    try:
+        ai_engine = AIEngine()
+        typer.secho("Analyzing diff with Gemini AI...", fg=typer.colors.CYAN)
+        ai_result = ai_engine.analyze_diff(diff)
+    except AIEngineError as e:
+        typer.secho(f"AI Engine Error: {e}", fg=typer.colors.RED, err=True)
+        sys.exit(1)
+
+    # Step 7: Process AI results
+    risk_score = ai_result.get("risk_score", 0)
+    verdict = ai_result.get("verdict", "APPROVE")
+    issues = ai_result.get("issues", [])
+
+    # Decision logic: BLOCK if verdict is BLOCK or risk_score >= 7
+    should_block = verdict == "BLOCK" or risk_score >= 7
+
+    if should_block:
+        typer.secho(
+            f"\n🚨 AI SECURITY ANALYSIS: BLOCKED (Risk Score: {risk_score}/10)",
+            fg=typer.colors.RED,
+            bold=True,
+        )
+
+        if issues:
+            typer.secho("\nIssues Found:", fg=typer.colors.RED, bold=True)
+            typer.secho("-" * 60, fg=typer.colors.RED)
+
+            for issue in issues:
+                severity = issue.get("severity", "Unknown")
+                issue_type = issue.get("type", "Unknown")
+                description = issue.get("description", "No description")
+                file_name = issue.get("file", "unknown")
+
+                # Color severity
+                severity_color = typer.colors.RED
+                if severity == "High":
+                    severity_color = typer.colors.RED
+                elif severity == "Medium":
+                    severity_color = typer.colors.YELLOW
+                elif severity == "Low":
+                    severity_color = typer.colors.CYAN
+
+                typer.secho(
+                    f"  [{severity}] ",
+                    fg=severity_color,
+                    bold=True,
+                    nl=False,
+                )
+                typer.secho(f"({issue_type}) ", fg=typer.colors.WHITE, nl=False)
+                typer.secho(f"{description}", fg=typer.colors.WHITE)
+                typer.secho(f"           File: {file_name}", fg=typer.colors.BRIGHT_BLACK)
+
+            typer.secho("-" * 60, fg=typer.colors.RED)
+
+        typer.secho(
+            "\n⛔ Pipeline blocked by AI analysis. Review the issues above.",
+            fg=typer.colors.RED,
+            bold=True,
+        )
+        sys.exit(1)
+
+    # AI analysis passed
+    typer.secho(
+        f"\n✅ AI Analysis Passed (Risk Score: {risk_score}/10)",
+        fg=typer.colors.GREEN,
+        bold=True,
+    )
+
+    if issues:
+        typer.secho("\nMinor issues noted (non-blocking):", fg=typer.colors.YELLOW)
+        for issue in issues:
+            severity = issue.get("severity", "Unknown")
+            description = issue.get("description", "No description")
+            typer.secho(f"  [{severity}] {description}", fg=typer.colors.YELLOW)
 
 
 if __name__ == "__main__":
