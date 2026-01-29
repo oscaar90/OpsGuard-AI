@@ -14,6 +14,7 @@ gitpython = "^3.1.40"
 openai = "^1.6.0"
 pyyaml = "^6.0.1"
 python-dotenv = "^1.2.1"
+rich = "^14.3.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"
