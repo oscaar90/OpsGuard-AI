@@ -1,7 +1,6 @@
 import os
 import json
 import time
-import traceback
 from openai import OpenAI
 from typing import Dict, Any
 from dotenv import load_dotenv
@@ -12,11 +11,30 @@ class AIEngineError(Exception):
     """Custom exception for AI Engine failures."""
     pass
 
+# SCHEMA ENFORCEMENT: Definimos la estructura exacta para evitar alucinaciones.
 SYSTEM_PROMPT = """
-You are OpsGuard-AI, a Senior Security Engineer.
-INPUT CONTEXT: Git diff analysis.
-RULES: Focus on added lines. Output JSON.
-JSON SCHEMA: {"risk_score": int, "verdict": str, "issues": []}
+ROLE: You are OpsGuard-AI, a Senior Application Security Engineer audit bot.
+TASK: Analyze the provided Git Diff for SECURITY VULNERABILITIES (Secrets, SQLi, XSS, RCE, Bad IAM, PII).
+
+RULES:
+1. Ignore style, formatting, or logic bugs. FOCUS ONLY ON SECURITY.
+2. If safe, verdict is "APPROVE".
+3. If unsafe, verdict is "BLOCK" and you MUST list specific findings.
+
+OUTPUT FORMAT (Strict JSON):
+{
+    "verdict": "APPROVE" | "BLOCK",
+    "risk_score": <integer 0-10>,
+    "explanation": "Brief executive summary of the security status.",
+    "findings": [
+        {
+            "file": "path/to/file.ext",
+            "line": "approximate line number or code snippet",
+            "severity": "CRITICAL" | "HIGH" | "MEDIUM" | "LOW",
+            "issue": "Technical description of the vulnerability"
+        }
+    ]
+}
 """
 
 class AIEngine:
@@ -39,12 +57,11 @@ class AIEngine:
             timeout=60.0
         )
         
-        # Modelo Ganador
         self.model = "google/gemini-2.0-flash-001"
 
     def analyze_diff(self, diff_text: str) -> Dict[str, Any]:
-        print(f"🤖 Sending diff to AI ({self.model})...")
-        print(f"📦 Payload Size: {len(diff_text)} chars")
+        print(f"🤖 OpsGuard Brain: Sending diff to {self.model}...")
+        print(f"📦 Context Payload: {len(diff_text)} chars")
 
         start_time = time.time()
         
@@ -53,9 +70,10 @@ class AIEngine:
                 model=self.model,
                 messages=[
                     {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": f"Analyze this diff:\n\n{diff_text}"}
+                    # Truncate defensivo a 30k chars para evitar errores de contexto
+                    {"role": "user", "content": f"Analyze this git diff:\n\n{diff_text[:30000]}"}
                 ],
-                temperature=0.2,
+                temperature=0.1, # Determinista
                 max_tokens=1024,
                 response_format={"type": "json_object"} 
             )
@@ -67,21 +85,35 @@ class AIEngine:
             content = response.choices[0].message.content
             clean_content = content.replace("```json", "").replace("```", "").strip()
             
-            # --- PARCHE DE ROBUSTEZ ---
-            parsed_data = json.loads(clean_content)
+            try:
+                parsed_data = json.loads(clean_content)
+            except json.JSONDecodeError:
+                print(f"⚠️ RAW AI RESPONSE (JSON Error): {clean_content}")
+                return {
+                    "verdict": "BLOCK",
+                    "risk_score": 10,
+                    "explanation": "AI output parsing failed. Manual review required.",
+                    "findings": []
+                }
             
-            # Si la IA devolvió una lista, cogemos el primer elemento
+            # Normalización de respuesta (Gemini a veces devuelve lista)
             if isinstance(parsed_data, list):
-                if len(parsed_data) > 0:
-                    return parsed_data[0]
-                else:
-                    return {"risk_score": 0, "verdict": "APPROVE", "issues": []}
+                parsed_data = parsed_data[0] if parsed_data else {}
             
-            # Si ya es un dict, lo devolvemos tal cual
-            return parsed_data
-            # --------------------------
+            # Mapeo defensivo de claves
+            return {
+                "verdict": parsed_data.get("verdict", "BLOCK"),
+                "risk_score": parsed_data.get("risk_score", 0),
+                "explanation": parsed_data.get("explanation", "No explanation provided."),
+                "findings": parsed_data.get("findings", [])
+            }
 
         except Exception as e:
-            print(f"\n❌ EXCEPCIÓN AI:")
-            # traceback.print_exc() # Descomentar si quieres ver todo el error
-            raise AIEngineError(f"AI Process Failed: {str(e)}")
+            print(f"\n❌ EXCEPCIÓN AI CRÍTICA: {str(e)}")
+            # Fail closed: Si falla el motor, bloqueamos por seguridad
+            return {
+                "verdict": "BLOCK",
+                "risk_score": 10,
+                "explanation": f"Internal Engine Error: {str(e)}",
+                "findings": []
+            }

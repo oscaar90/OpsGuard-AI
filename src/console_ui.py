@@ -1,70 +1,83 @@
 from rich.console import Console
-from rich.table import Table
 from rich.panel import Panel
-from rich.markdown import Markdown
-from rich.theme import Theme
+from rich.table import Table
+from rich import box
 
-# Definimos un tema corporativo/hacker
-custom_theme = Theme({
-    "info": "cyan",
-    "warning": "yellow",
-    "danger": "bold red",
-    "success": "bold green",
-    "title": "bold white on blue",
-})
-
-console = Console(theme=custom_theme)
+console = Console()
 
 class OpsGuardUI:
+    
     @staticmethod
     def print_banner():
         console.print(Panel.fit(
-            "[bold white]🛡️ OpsGuard-AI[/bold white]\n[cyan]Security Gate Active[/cyan]",
-            border_style="blue"
+            "[bold cyan]🛡️ OpsGuard-AI[/bold cyan]\n[dim]Security Gate Active[/dim]",
+            border_style="cyan"
         ))
 
     @staticmethod
     def print_regex_findings(findings: list):
         if not findings:
-            console.print("[success]✅ No static credential patterns found.[/success]")
+            console.print("✅ [green]No static credential patterns found.[/green]")
             return
 
-        table = Table(title="[danger]🚨 STATIC ANALYSIS FAILURES[/danger]", show_header=True, header_style="bold red")
-        table.add_column("File", style="cyan")
-        table.add_column("Line", justify="right")
-        table.add_column("Secret Type", style="yellow")
+        console.print(f"\n[bold red]🚨 DETECTED {len(findings)} STATIC VIOLATIONS:[/bold red]")
+        table = Table(show_header=True, header_style="bold white on red", box=box.ROUNDED)
+        table.add_column("Type")
+        table.add_column("File")
         
         for f in findings:
-            # Asumimos que finding es un dict u objeto con estos campos
-            table.add_row(f['file'], str(f['line']), f['type'])
-            
+            table.add_row(f.get("type"), f.get("file"))
+        
         console.print(table)
 
     @staticmethod
-    def print_ai_analysis(analysis: dict):
-        """Renderiza el JSON de la IA de forma bonita"""
-        risk_score = analysis.get("risk_score", 0)
-        verdict = analysis.get("verdict", "UNKNOWN")
+    def print_ai_analysis(result: dict):
+        console.print("\n[bold blue]╭─────────────────────────── 🧠 AI Context Analysis ───────────────────────────╮[/bold blue]")
         
-        # Color del panel según el riesgo
-        color = "green"
-        if risk_score >= 5: color = "yellow"
-        if risk_score >= 7: color = "red"
+        verdict = result.get("verdict", "UNKNOWN")
+        score = result.get("risk_score", 0)
+        explanation = result.get("explanation", "No details.")
+        findings = result.get("findings", [])
 
-        content = f"""
-        [bold]🤖 AI Semantic Verdict:[/bold] [{color}]{verdict}[/{color}]
-        [bold]🔥 Risk Score:[/bold] {risk_score}/10
+        # Semáforo
+        if verdict == "APPROVE":
+            v_style = "bold green"
+        else:
+            v_style = "bold white on red"
         
-        [bold]📝 Explanation:[/bold]
-        {analysis.get('explanation', 'No explanation provided.')}
-        """
-        
-        console.print(Panel(content, title="🧠 AI Context Analysis", border_style=color))
+        console.print(f"│         🤖 Verdict: [{v_style}] {verdict} [/{v_style}]")
+        console.print(f"│         🔥 Risk Score: {score}/10")
+        console.print(f"│         📝 Summary: [italic]{explanation}[/italic]")
+        console.print("╰──────────────────────────────────────────────────────────────────────────────╯")
+
+        # --- TABLA FORENSE ---
+        if findings:
+            console.print("\n[bold red]🕵️‍♂️  AI FORENSIC FINDINGS:[/bold red]")
+            
+            table = Table(show_header=True, header_style="bold white on red", border_style="red", box=box.HEAVY_HEAD)
+            table.add_column("Sev", justify="center", width=8)
+            table.add_column("File", style="cyan")
+            table.add_column("Line", style="yellow")
+            table.add_column("Issue", style="white")
+
+            for finding in findings:
+                sev = finding.get("severity", "UNK")
+                # Highlighting crítico
+                sev_color = "red" if sev in ["CRITICAL", "HIGH"] else "yellow"
+                
+                table.add_row(
+                    f"[{sev_color}]{sev}[/{sev_color}]",
+                    finding.get("file", "-"),
+                    str(finding.get("line", "?")),
+                    finding.get("issue", "No description")
+                )
+            
+            console.print(table)
 
     @staticmethod
     def print_block_message():
-        console.print("\n[bold white on red] ⛔ PIPELINE BLOCKED: SECURITY VIOLATION DETECTED [/bold white on red]\n")
+        console.print("\n[bold white on red] ⛔ PIPELINE BLOCKED: SECURITY VIOLATION DETECTED [/bold white on red]")
 
     @staticmethod
     def print_success_message():
-        console.print("\n[bold white on green] ✅ PIPELINE APPROVED: CODE IS CLEAN [/bold white on green]\n")
+        console.print("\n[bold black on green] ✅ PIPELINE APPROVED: CODE IS SECURE [/bold black on green]")
