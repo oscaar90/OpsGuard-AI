@@ -73,20 +73,20 @@ El sistema opera en dos fases estrictas para optimizar costes y latencia.
 ```mermaid
 graph TD
     User[Developer] -->|Git Push/PR| CLI[OpsGuard CLI]
-    
+
     subgraph "Phase 1: Deterministic Gate"
         CLI -->|Scan Diff| Regex[Regex Engine]
-        Regex -->|Match Found?| Block1[❌ BLOCK PIPELINE]
+        Regex -->|"Match Found?"| Block1["❌ BLOCK PIPELINE"]
     end
-    
+
     subgraph "Phase 2: Semantic Gate"
-        Regex -- No Matches --> AI[AI Engine (LLM)]
-        AI -->|Reasoning| Analysis{Security Verdict}
-        Analysis -- Risk Score > 7 --> Block2[❌ BLOCK PIPELINE]
-        Analysis -- Safe --> Pass[✅ APPROVE DEPLOY]
+        Regex -- "No Matches" --> AI["AI Engine (LLM)"]
+        AI -->|Reasoning| Analysis{"Security Verdict"}
+        Analysis -- "Risk Score > 7" --> Block2["❌ BLOCK PIPELINE"]
+        Analysis -- Safe --> Pass["✅ APPROVE DEPLOY"]
     end
-    
-    Block1 & Block2 --> Report[Github Comment / Console Log]
+
+    Block1 & Block2 --> Report["Github Comment / Console Log"]
 ```
 
 Componentes Técnicos
