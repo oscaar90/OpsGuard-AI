@@ -8,12 +8,15 @@ packages = [{include = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
-typer = "^0.9.0"
+# Mantenemos Typer con extras para shell completion
+typer = {extras = ["all"], version = "^0.9.0"}
 pydantic = "^2.5.0"
 gitpython = "^3.1.40"
 openai = "^1.6.0"
 pyyaml = "^6.0.1"
 python-dotenv = "^1.2.1"
+# FIX: Downgrade a 13.x para satisfacer la restricción (<14.0.0) de Typer
+rich = "^13.7.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"
