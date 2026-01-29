@@ -40,4 +40,4 @@ jobs:
         run: |
           # Ejecuta el escáner. 
           # En PRs, esto analizará los cambios propuestos.
-          poetry run opsguard scan
+          poetry run python -m src.main scan
