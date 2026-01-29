@@ -1,3 +1,30 @@
+# OpsGuard-AI
+
+> **Context-Aware Security Gate for GitHub Actions.**
+> Validates deployments using Hybrid Analysis (Deterministic Rules + LLM Reasoning).
+
+## Architecture (Day 1 Status)
+
+```mermaid
+graph TD
+    User[Developer] -->|Push/PR| GH[GitHub Actions]
+    GH -->|Trigger| Docker[OpsGuard Container]
+    
+    subgraph "OpsGuard Runtime"
+        CLI[Typer CLI] --> Ingest[Git Context Manager]
+        Ingest -->|Check Env| Env{Is CI?}
+        Env -- Yes --> JSON[Parse GITHUB_EVENT]
+        Env -- No --> Local[Git Diff HEAD]
+        JSON & Local --> Diff[Raw Code Delta]
+    end
+    
+    Diff --> Output[Stdout / Report]
+```
+
+
+
+
+
 OpsGuard-AI 🛡️🤖
 
     Context-Aware Security Gate for DevOps Pipelines. Validates code changes using Hybrid Analysis: Deterministic Regex Rules + LLM Reasoning (Semantic Analysis).
@@ -11,18 +38,20 @@ Para verificar la eficacia de OpsGuard sin necesidad de configurar un pipeline c
 
 Prerrequisitos
 
-    Python 3.12+ & Poetry.
+    Python 3.12+
 
-    Una API Key válida de OpenRouter en tu archivo .env:
+    Poetry (Gestor de dependencias)
+
+Setup Local
+
+    Clonar el repositorio:
 
 ```bash
-OPENROUTER_API_KEY=sk-or-v1-...
+git clone [https://github.com/oscaar90/OpsGuard-AI.git](https://github.com/oscaar90/OpsGuard-AI.git)
+cd OpsGuard-AI
 ```
 
-
-Pasos para la Demo
-
-Ejecuta el escáner contra la carpeta de pruebas vulnerables:
+Instalar dependencias:
 
 ```bash
 poetry run opsguard scan --path tests/fixtures/vulnerable_app
@@ -46,20 +75,20 @@ El sistema opera en dos fases estrictas para optimizar costes y latencia.
 ```mermaid
 graph TD
     User[Developer] -->|Git Push/PR| CLI[OpsGuard CLI]
-
+    
     subgraph "Phase 1: Deterministic Gate"
         CLI -->|Scan Diff| Regex[Regex Engine]
-        Regex -->|"Match Found?"| Block1["❌ BLOCK PIPELINE"]
+        Regex -->|Match Found?| Block1[❌ BLOCK PIPELINE]
     end
-
+    
     subgraph "Phase 2: Semantic Gate"
-        Regex -- "No Matches" --> AI["AI Engine (LLM)"]
-        AI -->|Reasoning| Analysis{"Security Verdict"}
-        Analysis -- "Risk Score > 7" --> Block2["❌ BLOCK PIPELINE"]
-        Analysis -- Safe --> Pass["✅ APPROVE DEPLOY"]
+        Regex -- No Matches --> AI[AI Engine (LLM)]
+        AI -->|Reasoning| Analysis{Security Verdict}
+        Analysis -- Risk Score > 7 --> Block2[❌ BLOCK PIPELINE]
+        Analysis -- Safe --> Pass[✅ APPROVE DEPLOY]
     end
-
-    Block1 & Block2 --> Report["Github Comment / Console Log"]
+    
+    Block1 & Block2 --> Report[Github Comment / Console Log]
 ```
 
 Componentes Técnicos
@@ -77,41 +106,31 @@ Local Scan (Manual)
 
 Escanea los cambios en tu directorio actual (Stage de Git):
 ```bash
-# Escanea archivos en el stage (git add)
 poetry run opsguard scan
-
-# Escanea un directorio específico
-poetry run opsguard scan --path ./src
-``` 
-
-Configuration
-
-El comportamiento se define en opsguard.yml (reglas regex) y variables de entorno:
-
-Variable	Descripción
-OPENROUTER_API_KEY	Requerido. Tu llave para el motor de IA.
-OPSGUARD_RISK_THRESHOLD	(Opcional) Nivel de riesgo para bloquear (Default: 7/10).
-
-🛡️ Security & Privacy
-
-OpsGuard implementa una estrategia de Privacidad por Diseño (Privacy by Design):
-
-    Filtrado Local: Las credenciales obvias (AWS Keys, etc.) son bloqueadas localmente por el Regex y NUNCA se envían a la nube (LLM).
-
-    Contexto Mínimo: Solo se envía al LLM el git diff (las líneas añadidas), no el repositorio completo.
-
-    Zero Retention: Se utilizan proveedores de API Enterprise que no entrenan modelos con los datos enviados.
-
-```text
-.
-├── config/             # Reglas predeterminadas
-├── src/
-│   ├── ai.py           # Cliente OpenRouter + Lógica de Retry
-│   ├── detector.py     # Motor Regex (Validación estática)
-│   ├── git_utils.py    # Extracción de contexto Git
-│   └── main.py         # Orquestador CLI
-├── tests/
-│   └── fixtures/       # Archivos vulnerables para Demo
-└── opsguard.yml        # Configuración de reglas
 ```
+
+2. Modo Demo / Testing (Field Test)
+
+Para verificar la detección híbrida (Regex + IA) sin modificar tu código, utiliza los fixtures incluidos:
+```bash
+poetry run opsguard scan --path tests/fixtures/vulnerable_app
+```
+
+Qué detectará:
+
+    aws_creds.env: Bloqueado por Regex (Patrón AWS estático).
+
+    config.php: Bloqueado por IA (Credenciales hardcodeadas genéricas).
+
+    legacy_login.py: Bloqueado por IA (Vulnerabilidad SQL Injection).
+
+🔧 Configuration
+
+Las reglas de detección estática se definen en opsguard.yml. El motor de IA utiliza modelos vía OpenRouter (agnóstico del proveedor).
+Parámetro	Descripción	Default
+risk_score	Umbral de bloqueo de la IA (0-10)	7
+model	Modelo LLM utilizado (gemini/grok/claude)	google/gemini-2.0-flash-001
+
+
+
 TFM - Máster en Ingeniería de Software & IA Developed by Óscar Sánchez Pérez
