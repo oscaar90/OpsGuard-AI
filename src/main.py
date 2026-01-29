@@ -1,13 +1,11 @@
 """Main CLI entry point for OpsGuard-AI."""
 import sys
+import os
 import typer
 from typing import Annotated
-import os
 
-from src.ai import AIEngine
-from src.ingest import GitManager
-from src.security import SecurityPolicy
-from src.console_ui import OpsGuardUI
+# NOTA: Imports pesados o de módulos propios eliminados del top-level
+# para evitar condiciones de carrera en la inicialización de Typer.
 
 app = typer.Typer(
     name="opsguard",
@@ -23,6 +21,15 @@ def scan(
     """
     Hybrid Security Gate: Regex Shield + AI Brain.
     """
+    # --- LAZY IMPORTS START ---
+    # Importamos aquí para garantizar que 'app' y 'scan' ya estén registrados
+    # antes de cargar dependencias complejas que podrían causar ciclos.
+    from src.ai import AIEngine
+    from src.ingest import GitManager
+    from src.security import SecurityPolicy
+    from src.console_ui import OpsGuardUI
+    # --- LAZY IMPORTS END ---
+
     OpsGuardUI.print_banner()
 
     # 1. Init & Git Context
@@ -31,6 +38,7 @@ def scan(
         manager = GitManager(repo_path=path)
         diff = manager.get_diff()
     except Exception as e:
+        # Usamos typer.secho directamente si UI falla, o la UI importada
         typer.secho(f"❌ Init Error: {e}", fg=typer.colors.RED)
         sys.exit(1)
 
