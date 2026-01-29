@@ -75,4 +75,4 @@ def scan(
         OpsGuardUI.print_success_message()
 
 if __name__ == "__main__":
-    app()
+    app(prog_name="opsguard")
