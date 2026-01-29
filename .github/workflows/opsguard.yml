@@ -1,0 +1,43 @@
+name: OpsGuard Security Gate 🛡️
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  security-audit:
+    name: 🕵️‍♂️ Semantic Security Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write # Necesario para comentar en el PR (Futuro)
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # CRÍTICO: Baja todo el historial para poder comparar diffs
+      
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install Dependencies
+        run: poetry install --no-interaction --no-root
+
+      - name: Run OpsGuard AI Scan
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPSGUARD_RISK_THRESHOLD: 7
+        run: |
+          # Ejecuta el escáner. 
+          # En PRs, esto analizará los cambios propuestos.
+          poetry run opsguard scan
