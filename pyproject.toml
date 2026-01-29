@@ -4,11 +4,14 @@ version = "0.1.0"
 description = "AI-powered DevOps guardian GitHub Action"
 authors = ["Your Name <you@example.com>"]
 readme = "README.md"
+# CRÍTICO: Esto asegura que 'src' se instale como un paquete Python real.
+# Sin esto, el entrypoint no encuentra el módulo en el CI.
 packages = [{include = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
-typer = "^0.9.0"
+# FIX: Usamos "all" para asegurar compatibilidad total con Rich y Shell Completion
+typer = {extras = ["all"], version = "^0.9.0"}
 pydantic = "^2.5.0"
 gitpython = "^3.1.40"
 openai = "^1.6.0"
@@ -21,6 +24,7 @@ pytest = "^7.4.0"
 black = "^23.12.0"
 
 [tool.poetry.scripts]
+# Entrypoint del binario. Apunta a src/main.py -> objeto app
 opsguard = "src.main:app"
 
 [tool.black]
@@ -30,6 +34,7 @@ include = '\.pyi?$'
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# Asegura que pytest encuentre el código fuente sin instalar el paquete
 pythonpath = ["."]
 
 [build-system]

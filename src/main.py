@@ -4,14 +4,26 @@ import os
 import typer
 from typing import Annotated
 
-# NOTA: Imports pesados o de módulos propios eliminados del top-level
-# para evitar condiciones de carrera en la inicialización de Typer.
+# NOTA DE ARQUITECTURA:
+# Mantenemos el Global Scope limpio de imports pesados.
+# Solo stdlib y Typer aquí arriba.
 
 app = typer.Typer(
     name="opsguard",
     help="AI-powered DevOps guardian for code review and security analysis.",
-    no_args_is_help=True
+    no_args_is_help=True,
+    add_completion=False # Desactiva completion para evitar ruido en logs de CI
 )
+
+# --- FIX CRÍTICO: CALLBACK EXPLÍCITO ---
+# Esto define la raíz de la CLI. Sin esto, Typer puede confundirse
+# en entornos headless y no registrar los subcomandos correctamente.
+@app.callback()
+def main_callback():
+    """
+    OpsGuard AI Security Gate Entrypoint.
+    """
+    pass
 
 @app.command()
 def scan(
@@ -22,8 +34,9 @@ def scan(
     Hybrid Security Gate: Regex Shield + AI Brain.
     """
     # --- LAZY IMPORTS START ---
-    # Importamos aquí para garantizar que 'app' y 'scan' ya estén registrados
-    # antes de cargar dependencias complejas que podrían causar ciclos.
+    # Importamos las librerías de negocio DENTRO del comando.
+    # Esto aísla la definición de la CLI de la lógica de ejecución,
+    # previniendo condiciones de carrera en la importación (Circular Imports).
     from src.ai import AIEngine
     from src.ingest import GitManager
     from src.security import SecurityPolicy
@@ -38,7 +51,6 @@ def scan(
         manager = GitManager(repo_path=path)
         diff = manager.get_diff()
     except Exception as e:
-        # Usamos typer.secho directamente si UI falla, o la UI importada
         typer.secho(f"❌ Init Error: {e}", fg=typer.colors.RED)
         sys.exit(1)
 
