@@ -1,8 +1,7 @@
-"""Git ingestion module for OpsGuard-AI."""
-
 import json
 import os
 from pathlib import Path
+from typing import List, Optional, Tuple
 
 from git import Repo
 from git.exc import GitCommandError, InvalidGitRepositoryError
@@ -10,7 +9,6 @@ from git.exc import GitCommandError, InvalidGitRepositoryError
 
 class GitIngestError(Exception):
     """Custom exception for git ingestion errors."""
-
     pass
 
 
@@ -18,72 +16,21 @@ class GitManager:
     """Encapsulates gitpython operations for reading repository changes."""
 
     def __init__(self, repo_path: str = ".") -> None:
-        """Initialize GitManager with the repository path.
-
-        Args:
-            repo_path: Path to the git repository.
-
-        Raises:
-            GitIngestError: If the path is not a valid git repository.
-        """
+        """Initialize GitManager with the repository path."""
         try:
             self.repo = Repo(repo_path)
         except InvalidGitRepositoryError as e:
             raise GitIngestError(f"Invalid git repository at '{repo_path}': {e}")
 
     def is_ci(self) -> bool:
-        """Check if running in GitHub Actions CI environment.
-
-        Returns:
-            True if GITHUB_ACTIONS environment variable is present.
-        """
+        """Check if running in GitHub Actions CI environment."""
         return os.environ.get("GITHUB_ACTIONS") is not None
 
-    def get_diff(self) -> str:
-        """Get the git diff based on the execution environment.
-
-        In local development (is_ci() == False):
-            Returns diff against HEAD for uncommitted changes.
-
-        In CI (GitHub Actions):
-            Reads GITHUB_EVENT_PATH, parses the event JSON,
-            and returns diff between pull_request.base.sha and pull_request.head.sha.
-
+    def _get_ci_shas(self) -> Tuple[str, str]:
+        """Helper: Extract base and head SHAs from GitHub Event JSON.
+        
         Returns:
-            The git diff as a string.
-
-        Raises:
-            GitIngestError: If unable to compute the diff.
-        """
-        if self.is_ci():
-            return self._get_ci_diff()
-        return self._get_local_diff()
-
-    def _get_local_diff(self) -> str:
-        """Get diff for local development (uncommitted changes against HEAD).
-
-        Returns:
-            The git diff output as a string.
-
-        Raises:
-            GitIngestError: If git diff command fails.
-        """
-        try:
-            return self.repo.git.diff("HEAD")
-        except GitCommandError as e:
-            raise GitIngestError(f"Failed to get local diff: {e}")
-
-    def _get_ci_diff(self) -> str:
-        """Get diff for GitHub Actions CI environment.
-
-        Reads the GitHub event payload to extract PR base and head SHAs.
-
-        Returns:
-            The git diff between base and head commits.
-
-        Raises:
-            GitIngestError: If event path is missing, JSON is invalid,
-                           or required SHA values are not found.
+            Tuple (base_sha, head_sha)
         """
         event_path = os.environ.get("GITHUB_EVENT_PATH")
         if not event_path:
@@ -106,12 +53,62 @@ class GitManager:
         head_sha = pull_request.get("head", {}).get("sha")
 
         if not base_sha or not head_sha:
-            raise GitIngestError(
-                "Missing base.sha or head.sha in pull_request event data"
-            )
+            raise GitIngestError("Missing base.sha or head.sha in pull_request event data")
+            
+        return base_sha, head_sha
+
+    def get_staged_files(self) -> List[str]:
+        """Get list of changed filenames (for pre-filtering).
+
+        Returns:
+            List of file paths relative to repo root.
+        """
+        try:
+            if self.is_ci():
+                base_sha, head_sha = self._get_ci_shas()
+                # Equivalent to: git diff --name-only base head
+                diff_text = self.repo.git.diff(base_sha, head_sha, name_only=True)
+            else:
+                # Equivalent to: git diff --name-only HEAD
+                diff_text = self.repo.git.diff("HEAD", name_only=True)
+            
+            return diff_text.splitlines() if diff_text else []
+            
+        except GitCommandError as e:
+            raise GitIngestError(f"Failed to list staged files: {e}")
+
+    def get_diff(self, files: Optional[List[str]] = None) -> str:
+        """Get the git diff based on environment and strict file filtering.
+
+        Args:
+            files: Optional list of files to limit the diff to. 
+                   If provided, only changes in these files are returned.
+
+        Returns:
+            The git diff as a string.
+        """
+        # Preparar argumentos extra para gitpython (file filtering)
+        # git diff <commit> -- file1 file2
+        extra_args = ["--"] + files if files else []
+
+        if self.is_ci():
+            return self._get_ci_diff(extra_args)
+        return self._get_local_diff(extra_args)
+
+    def _get_local_diff(self, extra_args: List[str]) -> str:
+        """Get diff for local development."""
+        try:
+            # self.repo.git.diff("HEAD", "--", "file1", "file2")
+            return self.repo.git.diff("HEAD", *extra_args)
+        except GitCommandError as e:
+            raise GitIngestError(f"Failed to get local diff: {e}")
+
+    def _get_ci_diff(self, extra_args: List[str]) -> str:
+        """Get diff for GitHub Actions CI environment."""
+        base_sha, head_sha = self._get_ci_shas()
 
         try:
-            return self.repo.git.diff(base_sha, head_sha)
+            return self.repo.git.diff(base_sha, head_sha, *extra_args)
         except GitCommandError as e:
             raise GitIngestError(
                 f"Failed to get diff between {base_sha} and {head_sha}: {e}"
