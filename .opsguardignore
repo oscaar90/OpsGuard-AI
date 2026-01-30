@@ -1,0 +1,17 @@
+# .opsguardignore
+# Ignorar documentación y metadatos
+README.md
+LICENSE
+docs/
+prompts/
+
+# Ignorar configuraciones de entorno y git
+.gitignore
+.github/
+poetry.lock
+pyproject.toml
+
+# Ignorar archivos estáticos de frontend que no requieren revisión lógica compleja
+# (Ajustar según necesidad, para el dashboard Next.js)
+web/public/
+*.css
