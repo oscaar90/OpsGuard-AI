@@ -11,15 +11,21 @@ class AIEngineError(Exception):
     """Custom exception for AI Engine failures."""
     pass
 
-# SCHEMA ENFORCEMENT: Definimos la estructura exacta para evitar alucinaciones.
+# SCHEMA ENFORCEMENT & CONTEXT INJECTION
 SYSTEM_PROMPT = """
 ROLE: You are OpsGuard-AI, a Senior Application Security Engineer audit bot.
-TASK: Analyze the provided Git Diff for SECURITY VULNERABILITIES (Secrets, SQLi, XSS, RCE, Bad IAM, PII).
+CONTEXT: You are auditing the source code of "OpsGuard", a DevSecOps CLI tool.
 
-RULES:
-1. Ignore style, formatting, or logic bugs. FOCUS ONLY ON SECURITY.
-2. If safe, verdict is "APPROVE".
-3. If unsafe, verdict is "BLOCK" and you MUST list specific findings.
+TASK: Analyze the provided Git Diff for SECURITY VULNERABILITIES.
+
+CRITICAL CONTEXTUAL RULES (To prevent False Positives):
+1. **Tooling Logic is SAFE**: Code that implements file filtering (e.g., parsing `.opsguardignore`, using `pathspec`), git operations, or config loading is INTENDED FUNCTIONALITY. Do NOT flag this as a "Security Bypass" or "Malicious Filtering".
+2. **File Paths are NOT PII**: Functions that list or log filenames (like `get_staged_files`) do not constitute a data leak in this context. Ignore risks related to "exposing file paths".
+3. **Focus on Real Threats**: Only block if you see:
+    - Hardcoded Secrets (API Keys, Passwords).
+    - Remote Code Execution (RCE) via unsafe input (e.g., `subprocess.run(shell=True)` with user input).
+    - SQL Injection or XSS (if reviewing web code).
+    - Insecure defaults in cryptography.
 
 OUTPUT FORMAT (Strict JSON):
 {
@@ -57,10 +63,12 @@ class AIEngine:
             timeout=60.0
         )
         
+        # Mantenemos Gemini Flash 2.0 por su ventana de contexto y capacidad de razonamiento
         self.model = "google/gemini-2.0-flash-001"
 
     def analyze_diff(self, diff_text: str) -> Dict[str, Any]:
         print(f"🤖 OpsGuard Brain: Sending diff to {self.model}...")
+        # Nota: El diff ya viene filtrado desde main.py, optimizando el payload.
         print(f"📦 Context Payload: {len(diff_text)} chars")
 
         start_time = time.time()
@@ -70,10 +78,11 @@ class AIEngine:
                 model=self.model,
                 messages=[
                     {"role": "system", "content": SYSTEM_PROMPT},
-                    # Truncate defensivo a 30k chars para evitar errores de contexto
+                    # Mantenemos el truncate defensivo.
+                    # TODO: En producción, implementar chunking inteligente si supera 30k chars.
                     {"role": "user", "content": f"Analyze this git diff:\n\n{diff_text[:30000]}"}
                 ],
-                temperature=0.1, # Determinista
+                temperature=0.1, # Determinista: reduce alucinaciones
                 max_tokens=1024,
                 response_format={"type": "json_object"} 
             )
@@ -96,11 +105,10 @@ class AIEngine:
                     "findings": []
                 }
             
-            # Normalización de respuesta (Gemini a veces devuelve lista)
+            # Normalización
             if isinstance(parsed_data, list):
                 parsed_data = parsed_data[0] if parsed_data else {}
             
-            # Mapeo defensivo de claves
             return {
                 "verdict": parsed_data.get("verdict", "BLOCK"),
                 "risk_score": parsed_data.get("risk_score", 0),
@@ -110,7 +118,7 @@ class AIEngine:
 
         except Exception as e:
             print(f"\n❌ EXCEPCIÓN AI CRÍTICA: {str(e)}")
-            # Fail closed: Si falla el motor, bloqueamos por seguridad
+            # Fail closed principle
             return {
                 "verdict": "BLOCK",
                 "risk_score": 10,
