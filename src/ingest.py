@@ -27,11 +27,7 @@ class GitManager:
         return os.environ.get("GITHUB_ACTIONS") is not None
 
     def _get_ci_shas(self) -> Tuple[str, str]:
-        """Helper: Extract base and head SHAs from GitHub Event JSON.
-        
-        Returns:
-            Tuple (base_sha, head_sha)
-        """
+        """Helper: Extract base and head SHAs from GitHub Event JSON."""
         event_path = os.environ.get("GITHUB_EVENT_PATH")
         if not event_path:
             raise GitIngestError("GITHUB_EVENT_PATH environment variable not set")
@@ -45,8 +41,16 @@ class GitManager:
         except json.JSONDecodeError as e:
             raise GitIngestError(f"Failed to parse GitHub event JSON: {e}")
 
+        # --- FIX: DETECCIÓN DE EVENTOS NO-PR ---
         pull_request = event_data.get("pull_request")
+        
         if not pull_request:
+            # Si no hay objeto PR, verificamos si es un evento que debemos ignorar
+            # (Merges a main, Deletes, Pushes directos)
+            if "pusher" in event_data or "deleted" in event_data:
+                 # Usamos una keyword específica "SKIP_SCAN" para capturarla en main
+                 raise GitIngestError("SKIP_SCAN: Event is not a Pull Request (Push/Delete detected).")
+            
             raise GitIngestError("No pull_request data found in GitHub event")
 
         base_sha = pull_request.get("base", {}).get("sha")

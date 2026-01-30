@@ -1,10 +1,11 @@
 name: OpsGuard Security Gate 🛡️
 
 on:
-  push:
-    branches: [ "main" ]
   pull_request:
-    branches: [ "main" ]
+    types: [opened, synchronize, reopened]
+  # Opcional: Si quieres escanear merges a main, deja push, 
+  # pero tu código actual abortará con "SKIP_SCAN" (que es lo correcto por ahora).
+  # Lo mejor es quitar 'push' si solo quieres escanear PRs.
 
 jobs:
   security-audit:
