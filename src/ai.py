@@ -11,6 +11,11 @@ class AIEngineError(Exception):
     """Custom exception for AI Engine failures."""
     pass
 
+# --- FINOPS CONFIGURATION (Unit Economic) ---
+# Pricing for google/gemini-2.0-flash-001 (OpenRouter/Google pricing)
+PRICE_PER_1M_INPUT = 0.10
+PRICE_PER_1M_OUTPUT = 0.40
+
 # SCHEMA ENFORCEMENT & CONTEXT INJECTION
 SYSTEM_PROMPT = """
 ROLE: You are OpsGuard-AI, a Senior Application Security Engineer audit bot.
@@ -79,7 +84,6 @@ class AIEngine:
                 messages=[
                     {"role": "system", "content": SYSTEM_PROMPT},
                     # Mantenemos el truncate defensivo.
-                    # TODO: En producción, implementar chunking inteligente si supera 30k chars.
                     {"role": "user", "content": f"Analyze this git diff:\n\n{diff_text[:30000]}"}
                 ],
                 temperature=0.1, # Determinista: reduce alucinaciones
@@ -90,6 +94,29 @@ class AIEngine:
             end_time = time.time()
             duration = end_time - start_time
             print(f"\033[96m⏱️  AI Analysis Time: {duration:.2f} seconds\033[0m")
+
+            # --- FINOPS TELEMETRY EXTRACTION ---
+            usage = response.usage
+            if usage:
+                input_tok = usage.prompt_tokens
+                output_tok = usage.completion_tokens
+                
+                # Cálculo de costes con precisión float
+                input_cost = (input_tok / 1_000_000) * PRICE_PER_1M_INPUT
+                output_cost = (output_tok / 1_000_000) * PRICE_PER_1M_OUTPUT
+                total_cost = input_cost + output_cost
+                
+                # Visualización de tabla FinOps
+                print(f"""
+\033[92m### 💰 FinOps Telemetry
+| Metric | Value | Unit Cost |
+| :--- | :--- | :--- |
+| **Input Tokens** | `{input_tok}` | ${PRICE_PER_1M_INPUT}/1M |
+| **Output Tokens** | `{output_tok}` | ${PRICE_PER_1M_OUTPUT}/1M |
+| **Total Latency** | `{duration:.2f}s` | N/A |
+| **EXECUTION COST** | **`${total_cost:.6f}`** | **Negligible** |
+\033[0m""")
+            # -----------------------------------
 
             content = response.choices[0].message.content
             clean_content = content.replace("```json", "").replace("```", "").strip()
