@@ -99,4 +99,4 @@ Para que funcione en tu fork, asegúrate de añadir el secreto en GitHub:
 
     Settings > Secrets and variables > Actions > New Repository Secret: OPENROUTER_API_KEY.
 
-    TFM - Máster en Ingeniería de Software & IA Proyecto final de implementación DevSecOps con Inteligencia Artificial.
+    TFM - Máster en Ingeniería de Software & IA Proyecto final de implementación DevSecOps con Inteligencia Artificial, por Óscar Sánchez Pérez
