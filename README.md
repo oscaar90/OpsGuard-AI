@@ -1,17 +1,84 @@
-OpsGuard-AI 🛡️
+# 🛡️ OpsGuard-AI
+> **Context-Aware Security Gate for DevOps Pipelines.**
 
-Context-Aware Security Gate for DevOps Pipelines.
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Python](https://img.shields.io/badge/python-3.12-blue)
+![Status](https://img.shields.io/badge/status-stable-green)
 
-OpsGuard es una herramienta de Ingeniería de Plataforma diseñada para detener vulnerabilidades en el código antes de que lleguen a producción. A diferencia de los linters tradicionales, OpsGuard utiliza un Motor Híbrido que combina:
+OpsGuard es una herramienta de Ingeniería de Plataforma diseñada para detener vulnerabilidades antes de que lleguen a producción. Combina **Regex de Alta Entropía** con **Análisis Semántico (LLM)** para reducir falsos positivos.
 
-    Análisis Estático (Regex): Detección determinista de patrones de alta entropía (AWS Keys, Private Keys, Tokens).
 
-    Análisis Semántico (IA): Uso de LLMs (vía OpenRouter) para entender la intención del código y detectar vulnerabilidades lógicas (SQL Injection, Backdoors, Credenciales hardcodeadas genéricas).
+---
 
-🏗️ Architecture
+## 📂 Documentación Técnica (Engineering Standards)
+Para profundizar en las decisiones de arquitectura, costes y privacidad, consulte los **Architecture Decision Records (ADR)**:
+- [ADR-001: Patrón Gatekeeper Local](/docs/adr/0001-patron-gatekeeper-local.md)
+- [ADR-002: Prompt Engineering & English Tokens](/docs/adr/0002-prompting-en-ingles.md)
+- [ADR-003: Telemetría y FinOps](/docs/adr/0003-telemetria-y-finops.md)
 
-El sistema analiza los git diffs (solo el código nuevo) para optimizar costes y latencia en entornos CI/CD.
-Fragmento de código
+---
+
+## 🤝 Estándares de Desarrollo (Conventional Commits)
+Este proyecto sigue estrictamente la especificación **[Conventional Commits](https://www.conventionalcommits.org/)** para asegurar un historial de Git legible y automatizable.
+
+| Tipo | Descripción | Ejemplo |
+| :--- | :--- | :--- |
+| `feat` | Nueva funcionalidad | `feat: add AI semantic analysis engine` |
+| `fix` | Corrección de error | `fix: resolve regex pattern for AWS keys` |
+| `docs` | Cambios en documentación | `docs: add ADR 001 and architecture diagrams` |
+| `chore` | Mantenimiento / Configuración | `chore: update poetry dependencies` |
+| `test` | Tests unitarios o de integración | `test: add shooting range fixtures` |
+
+> **Nota:** Esto facilita la Trazabilidad y la generación automática de Changelogs.
+
+
+## ⚡ Quick Start (Modo Evaluación)
+Siga estos pasos para probar la herramienta en local sin necesidad de configurar GitHub Actions.
+
+### 1. Instalación
+Requisitos: Python 3.12+ y [Poetry](https://python-poetry.org/docs/).
+
+
+
+```bash
+# 1. Clonar repositorio
+git clone [https://github.com/oscaar90/OpsGuard-AI.git](https://github.com/oscaar90/OpsGuard-AI.git)
+cd OpsGuard-AI
+
+# 2. Instalar dependencias (Entorno virtual aislado)
+poetry install
+```
+
+2. Configuración
+```bash
+Renombre el archivo de ejemplo y añada la API Key proporcionada en la entrega del proyecto.
+
+cp .env.example .env
+```
+# Edite .env y pegue la variable OPENROUTER_API_KEY
+
+
+3. Ejecutar Prueba de Concepto (Shooting Range)
+
+Hemos incluido una suite de archivos vulnerables (tests/fixtures) para demostrar la detección.
+
+Comando:
+```bash
+poetry run opsguard scan --path tests/fixtures/vulnerable_app
+```
+
+🏗️ Arquitectura del Motor
+
+El sistema analiza los git diffs para optimizar costes y latencia.
+
+
+
+    🔴 BLOCK (Regex): aws_creds.env (AWS Key detectada).
+
+    🔴 BLOCK (AI Semántico): legacy_login.py (SQL Injection detectada).
+
+    ✅ PASS: Archivos de documentación y código seguro.
+
 ```mermaid
 graph TD
     User[Developer] -->|Git Push/PR| CLI[OpsGuard CLI]
@@ -31,72 +98,16 @@ graph TD
     Block & Pass --> Report["CI/CD Report (Console/GitHub)"]
 ```
 
-🚀 Installation & Setup
-Prerrequisitos
+🔧 Integración CI/CD (GitHub Actions)
 
-    Python 3.12+
+Para integrar OpsGuard en un repositorio de producción:
 
-    Poetry (Gestor de dependencias)
+    Copiar el workflow: .github/workflows/opsguard.yml.
 
-1. Clonar el repositorio
+    Definir el secreto en GitHub: Settings > Secrets > Actions > OPENROUTER_API_KEY.
 
-```bash
-git clone https://github.com/oscaar90/OpsGuard-AI.git
-cd OpsGuard-AI
-```
-2. Instalar dependencias
-```bash
+    El pipeline bloqueará automáticamente cualquier PR que introduzca vulnerabilidades.
 
-poetry install
-```
-3. Configuración (.env)
+    🧪 Evidencias de Ejecución
 
-OpsGuard necesita acceso a un proveedor de LLM (OpenRouter) para el análisis semántico. Crea un archivo .env en la raíz del proyecto:
-Bash
-```bash
-# Crea el archivo .env
-touch .env
-```
-Añade tu clave de API:
-```ini
-# .env
-OPENROUTER_API_KEY="sk-or-v1-TuClaveAqui..."
-OPSGUARD_RISK_THRESHOLD=7
-```
-⚙️ Usage
-
-OpsGuard puede ejecutarse en modo local (hook de pre-commit) o en modo demostración.
-Escaneo de Código (Git Stage)
-
-Para escanear los cambios que estás a punto de subir (git add):
-```bash
-poetry run opsguard scan
-```
-⚡ Modo Demo (Shooting Range)
-
-Hemos incluido una carpeta tests/fixtures/vulnerable_app con vulnerabilidades reales ("cebos") para probar la eficacia del motor sin comprometer el repositorio.
-
-Ejecuta el escáner contra los archivos de prueba:
-
-```bash
-poetry run opsguard scan --path tests/fixtures/vulnerable_app
-```
-Resultados esperados en la demo:
-
-    🔴 Bloqueo por Regex: Detectará aws_creds.env (Patrón AKIA...).
-
-    🔴 Bloqueo por IA:
-
-        config.php: Detectará credenciales 'admin' hardcodeadas (que el regex ignora).
-
-        legacy_login.py: Detectará vulnerabilidad de SQL Injection.
-
-🔧 CI/CD Integration
-
-OpsGuard está diseñado para ejecutarse automáticamente en GitHub Actions. El flujo de trabajo se encuentra en .github/workflows/opsguard.yml y se activa en cada push o pull_request a la rama main.
-
-Para que funcione en tu fork, asegúrate de añadir el secreto en GitHub:
-
-    Settings > Secrets and variables > Actions > New Repository Secret: OPENROUTER_API_KEY.
-
-    TFM - Máster en Ingeniería de Software & IA Proyecto final de implementación DevSecOps con Inteligencia Artificial, por Óscar Sánchez Pérez
+Puede consultar logs reales y capturas de funcionamiento en la carpeta de evidencias: 👉  [Ver Logs y Capturas](/docs/evidence)
