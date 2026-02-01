@@ -4,6 +4,7 @@ README.md
 LICENSE
 docs/
 prompts/
+tests/
 
 # Ignorar configuraciones de entorno y git
 .gitignore
