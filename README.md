@@ -1,7 +1,6 @@
 # 🛡️ OpsGuard-AI
 > **Context-Aware Security Gate for DevOps Pipelines.**
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.12-blue)
 ![Status](https://img.shields.io/badge/status-stable-green)
 ![CI/CD](https://img.shields.io/badge/github--actions-enabled-brightgreen)
@@ -147,4 +146,14 @@ Puede consultar logs reales y capturas de funcionamiento en la carpeta de eviden
 👉 [Ver Logs y Capturas](/docs/evidence)
 
 ---
+
+⚖️ Licencia
+
+Este proyecto es software propietario.
+
+El código fuente se hace público únicamente con fines de evaluación académica y demostración técnica.
+No se concede permiso para usar, copiar, modificar, distribuir ni explotar este software sin autorización expresa y por escrito del autor.
+
+Consulte el archivo LICENSE para los términos completos.
+
 **TFM - Máster en Desarrollo con IA** | Óscar Sánchez Pérez
