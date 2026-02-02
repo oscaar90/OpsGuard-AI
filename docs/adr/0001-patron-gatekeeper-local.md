@@ -10,7 +10,7 @@ Este problema presenta un dilema arquitectónico: necesitamos la capacidad anal�
 
 ### Restricciones identificadas:
 - El código analizado puede contener secretos hardcodeados
-- Las APIs de LLM (Claude, Gemini) procesan datos en servidores externos
+- Las APIs de LLM basadas en SaaS (como Google Vertex AI, Anthropic Claude o OpenAI) procesan datos en infraestructura multi-tenant fuera del perímetro de seguridad corporativo
 - El envío de secretos a terceros viola políticas de seguridad corporativas
 - La detección de secretos mediante LLM es redundante cuando existen soluciones deterministas probadas
 

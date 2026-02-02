@@ -10,10 +10,10 @@ Los costes de inferencia de LLMs y la latencia son factores críticos para la ad
 2. **Latencia excesiva**: Checks lentos bloquean el flujo de desarrollo y frustran a los desarrolladores
 3. **Opacidad**: Sin datos empíricos, la selección de modelo (Gemini Flash vs Claude Sonnet) se basa en intuición
 
-### Requisitos del proyecto académico:
-- El Trabajo Fin de Máster (TFM) requiere justificación cuantitativa de las decisiones técnicas
-- La comparativa de modelos debe basarse en datos reales, no en benchmarks teóricos
-- El tribunal evaluará la metodología de medición y análisis de costes
+### Restricciones de Negocio y Stakeholders:
+- Auditabilidad Financiera: La organización requiere un desglose granular de costes (Unit Economics) para justificar la adopción de GenAI.
+- Justificación de Arquitectura: La elección del modelo debe estar respaldada por métricas comparativas de latencia vs. coste, no por preferencias subjetivas.
+- Transparencia Operativa: Es mandatorio visualizar el impacto del sistema en los tiempos de bloqueo del pipeline CI/CD
 
 ## Decisión
 El sistema implementará un **"Modo de Telemetría Verbosa"** habilitado por defecto que registrará métricas estrictas para cada interacción con el LLM.
