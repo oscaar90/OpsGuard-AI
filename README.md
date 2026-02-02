@@ -39,6 +39,7 @@ OpsGuard-AI/
 ├── docs/                 # Documentación del proyecto
 │   ├── adr/              # Architecture Decision Records (Decisiones técnicas)
 │   └── evidence/         # Capturas y logs de auditoría (Pruebas de ejecución)
+├── prompts/              # Ingeniería de Prompts (System Instructions & Contexto)
 ├── src/                  # Código fuente de la aplicación
 │   ├── ai.py             # Motor de análisis semántico (Cliente LLM)
 │   ├── security.py       # Motor de análisis estático (Regex Patterns)
@@ -46,6 +47,7 @@ OpsGuard-AI/
 │   ├── ingest.py         # Procesamiento de Git Diffs y lectura de archivos
 │   └── main.py           # Punto de entrada (Entrypoint)
 ├── tests/                # Suite de tests y fixtures (Shooting Range)
+├── web/                  # Recursos estáticos y Landing Page del proyecto
 ├── .env.example          # Plantilla de variables de entorno
 ├── pyproject.toml        # Configuración de dependencias (Poetry)
 └── README.md             # Punto de entrada de documentación
