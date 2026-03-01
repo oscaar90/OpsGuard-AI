@@ -95,6 +95,9 @@ Para profundizar en las decisiones de arquitectura, costes y privacidad, consult
 - [ADR-004: Política Fail-Closed en Gate 2](/docs/adr/0004-fail-closed-policy.md)
 - [ADR-005: Estrategia de Truncado de Diff](/docs/adr/0005-diff-truncation-strategy.md)
 
+**Informe de benchmark completo** (telemetría raw, casos APPROVE, análisis de falsos positivos):
+👉 [`docs/benchmark-models.md`](/docs/benchmark-models.md)
+
 ---
 
 ## ⚡ Quick Start (Modo Evaluación)
@@ -347,6 +350,11 @@ Para contribuir al proyecto o probarlo en local, OpsGuard incluye su propio pipe
 ### 🧪 Evidencias de Ejecución
 Puede consultar logs reales y capturas de funcionamiento en la carpeta de evidencias:
 👉 [Ver Logs y Capturas](/docs/evidence)
+
+#### 📊 Benchmark de modelos (telemetría completa)
+
+Informe con los registros de telemetría JSON de las 12 combinaciones fixture/modelo, 3 casos APPROVE (sin falsos positivos) y análisis FinOps a escala:
+👉 [`docs/benchmark-models.md`](/docs/benchmark-models.md)
 
 #### 🔔 Issues de seguridad generados automáticamente (v1.0.2)
 
