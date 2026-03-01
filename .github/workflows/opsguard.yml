@@ -174,7 +174,7 @@ jobs:
                 '### Next steps',
                 '1. Review the CI run logs linked above for the full OpsGuard security report.',
                 '2. Fix the detected issue in the branch `' + pr.head.ref + '`.',
-                '3. Push the fix — OpsGuard will re-scan automatically.',
+                '3. Push the fix - OpsGuard will re-scan automatically.',
                 '4. Close this issue once the PR is approved or discarded.',
                 '',
                 '> This issue was created automatically by OpsGuard. Do not merge the PR until this alert is resolved.',

@@ -17,7 +17,7 @@ Cada entrada está vinculada a su Pull Request en GitHub para trazabilidad compl
   - Rama: `feat/security-alert-issues` → `main` (PR #58)
   - Permiso añadido: `issues: write` al job `security-scan`
 
-### Evidencia de verificacion — 5 Issues generados automaticamente
+### Evidencia de verificacion - 5 Issues generados automaticamente
 
 La feature fue verificada abriendo 5 PRs de demo con fixtures vulnerables del Shooting Range. OpsGuard bloqueo cada PR y creo el Issue correspondiente de forma autonoma:
 
@@ -33,7 +33,7 @@ Los 5 Issues quedan abiertos en el repositorio como evidencia permanente. Los PR
 
 ### Documentacion
 
-- **`docs/benchmark-models.md`** — Informe completo del benchmark de modelos como artefacto independiente complementario al ADR-0003. Incluye los registros de telemetría completos (JSON) para las 12 combinaciones BLOCK (4 fixtures × 3 modelos) con `verdict`, `risk_score`, justificación textual del modelo y objeto `telemetry` con tokens, latencia y coste por llamada. Añade además 3 fixtures de aprobacion (APPROVE) que no estaban en el ADR: versión segura del SQL injection (query parametrizada), refactoring puro sin superficie de seguridad, y el caso `pathspec` — el falso positivo real detectado durante el dog-fooding, que documenta tanto el problema como la CRITICAL CONTEXTUAL RULE que lo resolvió. Precisión total verificada: 7/7 (4 verdaderos positivos + 3 sin falsos positivos). Los promedios de latencia y coste son matemáticamente consistentes con el ADR-0003 al decimal.
+- **`docs/benchmark-models.md`** - Informe completo del benchmark de modelos como artefacto independiente complementario al ADR-0003. Incluye los registros de telemetría completos (JSON) para las 12 combinaciones BLOCK (4 fixtures × 3 modelos) con `verdict`, `risk_score`, justificación textual del modelo y objeto `telemetry` con tokens, latencia y coste por llamada. Añade además 3 fixtures de aprobacion (APPROVE) que no estaban en el ADR: versión segura del SQL injection (query parametrizada), refactoring puro sin superficie de seguridad, y el caso `pathspec` - el falso positivo real detectado durante el dog-fooding, que documenta tanto el problema como la CRITICAL CONTEXTUAL RULE que lo resolvió. Precisión total verificada: 7/7 (4 verdaderos positivos + 3 sin falsos positivos). Los promedios de latencia y coste son matemáticamente consistentes con el ADR-0003 al decimal.
 
 ---
 

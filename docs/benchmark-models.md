@@ -1,4 +1,4 @@
-# OpsGuard-AI — Benchmark de Modelos: Informe Completo
+# OpsGuard-AI - Benchmark de Modelos: Informe Completo
 
 > **Complemento al ADR-0003** · Artefacto de verificación empírica
 > Fecha de ejecución: 2026-03-01 · Rama: `main` · Commit: `aad1827`
@@ -25,7 +25,7 @@ Todos los modelos recibieron el mismo system prompt (`prompts/system_prompt.txt`
 
 ## Fixtures del Shooting Range (BLOCK)
 
-### Fixture B1 — `legacy_login.py` (SQL Injection)
+### Fixture B1 - `legacy_login.py` (SQL Injection)
 
 **Diff enviado:**
 ```diff
@@ -63,7 +63,7 @@ Todos los modelos recibieron el mismo system prompt (`prompts/system_prompt.txt`
 {
   "verdict": "BLOCK",
   "risk_score": 10,
-  "justification": "This code contains a textbook SQL injection vulnerability. The `username` value is embedded directly into the query string via f-string interpolation (`f\"SELECT * FROM users WHERE name = '{username}'\"`). This allows any attacker with control over the `username` parameter to execute arbitrary SQL. Severity is maximum because the vulnerable query touches authentication logic — a successful injection can grant access to any account, enumerate the database schema, or corrupt data. Must be rewritten using parameterized queries before merge.",
+  "justification": "This code contains a textbook SQL injection vulnerability. The `username` value is embedded directly into the query string via f-string interpolation (`f\"SELECT * FROM users WHERE name = '{username}'\"`). This allows any attacker with control over the `username` parameter to execute arbitrary SQL. Severity is maximum because the vulnerable query touches authentication logic - a successful injection can grant access to any account, enumerate the database schema, or corrupt data. Must be rewritten using parameterized queries before merge.",
   "telemetry": {
     "model": "anthropic/claude-haiku-4-5",
     "input_tokens": 1142,
@@ -97,7 +97,7 @@ Todos los modelos recibieron el mismo system prompt (`prompts/system_prompt.txt`
 
 ---
 
-### Fixture B2 — `auth_middleware.py` (Developer Backdoor)
+### Fixture B2 - `auth_middleware.py` (Developer Backdoor)
 
 **Diff enviado:**
 ```diff
@@ -140,7 +140,7 @@ Todos los modelos recibieron el mismo system prompt (`prompts/system_prompt.txt`
 {
   "verdict": "BLOCK",
   "risk_score": 9,
-  "justification": "Developer backdoor detected in authentication middleware. The `X-DEBUG-MODE` header check at line 8 provides a complete authentication bypass: when this header is present with value `true`, the function returns `True` immediately without validating any credential. This pattern is especially dangerous because the bypass is disguised as a debugging facility — the comment `# Bypass auth completely` in the diff even documents the intent. In production, any client with knowledge of this header can impersonate any user or service. The fix is simple: remove the backdoor block entirely. Debug-mode behavior belongs in test doubles, not in production middleware.",
+  "justification": "Developer backdoor detected in authentication middleware. The `X-DEBUG-MODE` header check at line 8 provides a complete authentication bypass: when this header is present with value `true`, the function returns `True` immediately without validating any credential. This pattern is especially dangerous because the bypass is disguised as a debugging facility - the comment `# Bypass auth completely` in the diff even documents the intent. In production, any client with knowledge of this header can impersonate any user or service. The fix is simple: remove the backdoor block entirely. Debug-mode behavior belongs in test doubles, not in production middleware.",
   "telemetry": {
     "model": "anthropic/claude-haiku-4-5",
     "input_tokens": 1287,
@@ -159,7 +159,7 @@ Todos los modelos recibieron el mismo system prompt (`prompts/system_prompt.txt`
 {
   "verdict": "BLOCK",
   "risk_score": 8,
-  "justification": "Authentication backdoor identified. The `validate_request` function includes a debug bypass: if the `X-DEBUG-MODE` header equals `'true'`, authentication is skipped entirely and the function returns `True`. This effectively creates an unauthenticated access path for anyone who knows the header. The commented explanation `# Bypass auth completely` confirms this is intentional, which makes the risk higher — it suggests awareness of the security impact. This must not be merged into any environment. Remove lines 7-8 before approval.",
+  "justification": "Authentication backdoor identified. The `validate_request` function includes a debug bypass: if the `X-DEBUG-MODE` header equals `'true'`, authentication is skipped entirely and the function returns `True`. This effectively creates an unauthenticated access path for anyone who knows the header. The commented explanation `# Bypass auth completely` confirms this is intentional, which makes the risk higher - it suggests awareness of the security impact. This must not be merged into any environment. Remove lines 7-8 before approval.",
   "telemetry": {
     "model": "openai/gpt-4o-mini",
     "input_tokens": 1287,
@@ -174,7 +174,7 @@ Todos los modelos recibieron el mismo system prompt (`prompts/system_prompt.txt`
 
 ---
 
-### Fixture B3 — `config.php` (Hardcoded Secrets)
+### Fixture B3 - `config.php` (Hardcoded Secrets)
 
 **Diff enviado:**
 ```diff
@@ -201,7 +201,7 @@ Todos los modelos recibieron el mismo system prompt (`prompts/system_prompt.txt`
 
 ---
 
-### Fixture B4 — `supply_chain_attack.py` (Typosquatting `ghrc.io`)
+### Fixture B4 - `supply_chain_attack.py` (Typosquatting `ghrc.io`)
 
 **Diff enviado:**
 ```diff
@@ -215,7 +215,7 @@ Todos los modelos recibieron el mismo system prompt (`prompts/system_prompt.txt`
 +    subprocess.run(["docker", "push", full_image], check=True)
 ```
 
-> Este fixture es el **caso de prueba más exigente del benchmark**. El dominio `ghrc.io` es sintácticamente válido, no contiene ningún patrón léxico reconocible como malicioso y la diferencia con `ghcr.io` (registro oficial de GitHub) es un único carácter transpuesto. Solo el razonamiento contextual — entender que este código es un pipeline de CI/CD que empuja imágenes a producción, y que `ghrc.io` no es un dominio legítimo conocido — permite identificar el riesgo.
+> Este fixture es el **caso de prueba más exigente del benchmark**. El dominio `ghrc.io` es sintácticamente válido, no contiene ningún patrón léxico reconocible como malicioso y la diferencia con `ghcr.io` (registro oficial de GitHub) es un único carácter transpuesto. Solo el razonamiento contextual - entender que este código es un pipeline de CI/CD que empuja imágenes a producción, y que `ghrc.io` no es un dominio legítimo conocido - permite identificar el riesgo.
 
 #### `google/gemini-2.0-flash-001`
 
@@ -242,7 +242,7 @@ Todos los modelos recibieron el mismo system prompt (`prompts/system_prompt.txt`
 {
   "verdict": "BLOCK",
   "risk_score": 8,
-  "justification": "Supply chain attack via registry typosquatting. The constant `REGISTRY = 'ghrc.io'` contains a single-character transposition of the legitimate GitHub Container Registry domain `ghcr.io`. This is a known typosquatting attack vector: by controlling `ghrc.io`, an attacker can serve malicious container images to any pipeline that uses this configuration. The impact is severe because this code calls `docker push` — it would upload production images to the attacker-controlled registry — and any downstream consumer calling `docker pull` from `ghrc.io` would receive a compromised image. The same typo appears twice in the file (REGISTRY constant and pull_base_image function), suggesting this was introduced intentionally rather than as a typo.",
+  "justification": "Supply chain attack via registry typosquatting. The constant `REGISTRY = 'ghrc.io'` contains a single-character transposition of the legitimate GitHub Container Registry domain `ghcr.io`. This is a known typosquatting attack vector: by controlling `ghrc.io`, an attacker can serve malicious container images to any pipeline that uses this configuration. The impact is severe because this code calls `docker push` - it would upload production images to the attacker-controlled registry - and any downstream consumer calling `docker pull` from `ghrc.io` would receive a compromised image. The same typo appears twice in the file (REGISTRY constant and pull_base_image function), suggesting this was introduced intentionally rather than as a typo.",
   "telemetry": {
     "model": "anthropic/claude-haiku-4-5",
     "input_tokens": 1143,
@@ -261,7 +261,7 @@ Todos los modelos recibieron el mismo system prompt (`prompts/system_prompt.txt`
 {
   "verdict": "BLOCK",
   "risk_score": 7,
-  "justification": "Suspicious container registry domain detected. `ghrc.io` does not match the official GitHub Container Registry hostname `ghcr.io`. The single-character difference (`ghrc` vs `ghcr`) is characteristic of a typosquatting domain. This pipeline pushes production Docker images to this registry and also pulls base images from it — both operations would interact with the potentially malicious domain. Recommend verifying whether `ghrc.io` is an intentional private registry or a typo before merging. If it is a typo, replace with `ghcr.io`.",
+  "justification": "Suspicious container registry domain detected. `ghrc.io` does not match the official GitHub Container Registry hostname `ghcr.io`. The single-character difference (`ghrc` vs `ghcr`) is characteristic of a typosquatting domain. This pipeline pushes production Docker images to this registry and also pulls base images from it - both operations would interact with the potentially malicious domain. Recommend verifying whether `ghrc.io` is an intentional private registry or a typo before merging. If it is a typo, replace with `ghcr.io`.",
   "telemetry": {
     "model": "openai/gpt-4o-mini",
     "input_tokens": 1143,
@@ -278,9 +278,9 @@ Todos los modelos recibieron el mismo system prompt (`prompts/system_prompt.txt`
 
 ## Fixtures de Aprobación (APPROVE)
 
-> Verificación de ausencia de falsos positivos. Un sistema de seguridad sobreconservador que bloquea código legítimo es tan inútil como uno que no detecta amenazas — genera fatiga de alertas y lleva a los equipos a desactivar la herramienta.
+> Verificación de ausencia de falsos positivos. Un sistema de seguridad sobreconservador que bloquea código legítimo es tan inútil como uno que no detecta amenazas - genera fatiga de alertas y lleva a los equipos a desactivar la herramienta.
 
-### Fixture A1 — `clean_query.py` (versión segura de B1)
+### Fixture A1 - `clean_query.py` (versión segura de B1)
 
 El mismo módulo de consulta a base de datos de Fixture B1, reescrito correctamente.
 
@@ -312,7 +312,7 @@ El mismo módulo de consulta a base de datos de Fixture B1, reescrito correctame
 {
   "verdict": "APPROVE",
   "risk_score": 1,
-  "justification": "This is a secure database query implementation. The SQL query uses a parameterized placeholder (`?`) and passes the username as a separate tuple argument to `conn.execute()`. This pattern completely eliminates the SQL injection risk — the database driver handles escaping and type coercion. The use of a context manager (`with sqlite3.connect`) ensures the connection is closed properly. The typed signature and Optional return type indicate defensive coding practices. No security concerns.",
+  "justification": "This is a secure database query implementation. The SQL query uses a parameterized placeholder (`?`) and passes the username as a separate tuple argument to `conn.execute()`. This pattern completely eliminates the SQL injection risk - the database driver handles escaping and type coercion. The use of a context manager (`with sqlite3.connect`) ensures the connection is closed properly. The typed signature and Optional return type indicate defensive coding practices. No security concerns.",
   "telemetry": {
     "model": "google/gemini-2.0-flash-001",
     "input_tokens": 1198,
@@ -327,7 +327,7 @@ El mismo módulo de consulta a base de datos de Fixture B1, reescrito correctame
 
 ---
 
-### Fixture A2 — `clean_refactor.py` (refactoring sin cambios de seguridad)
+### Fixture A2 - `clean_refactor.py` (refactoring sin cambios de seguridad)
 
 Caso de uso cotidiano: un PR que solo reorganiza código sin tocar ninguna superficie de ataque.
 
@@ -350,11 +350,11 @@ Caso de uso cotidiano: un PR que solo reorganiza código sin tocar ninguna super
 | `anthropic/claude-haiku-4-5` | ✅ APPROVE | 0/10 | 1 098 ms | Equivalent logic, improved readability, no security impact |
 | `openai/gpt-4o-mini` | ✅ APPROVE | 0/10 | 1 876 ms | Style-only change, no security concern |
 
-> Los tres modelos devolvieron `risk_score=0` — el mínimo posible — para este diff. Esto confirma que el sistema no produce falsos positivos ante refactorings rutinarios: no hay penalización por mejorar código legítimo.
+> Los tres modelos devolvieron `risk_score=0` - el mínimo posible - para este diff. Esto confirma que el sistema no produce falsos positivos ante refactorings rutinarios: no hay penalización por mejorar código legítimo.
 
 ---
 
-### Fixture A3 — `pathspec_usage.py` (falso positivo detectado en dog-fooding)
+### Fixture A3 - `pathspec_usage.py` (falso positivo detectado en dog-fooding)
 
 > **Contexto:** Durante el dog-fooding de OpsGuard sobre su propio repositorio, Gate 2 generó un falso positivo al analizar un diff que importaba la librería `pathspec`. El modelo interpretó "bypass" (presente en el nombre de un método interno de `pathspec`) como un intento de eludir controles de seguridad. Este fixture documenta el caso real y verifica que la CRITICAL CONTEXTUAL RULE añadida al system prompt lo resuelve.
 
@@ -375,11 +375,11 @@ Caso de uso cotidiano: un PR que solo reorganiza código sin tocar ninguna super
 
 | Modelo | Veredicto | Risk | Latencia | Resultado |
 |--------|:---------:|:----:|:--------:|-----------|
-| `google/gemini-2.0-flash-001` | ✅ APPROVE | 1/10 | 1 654 ms | Correcto — librería legítima reconocida |
-| `anthropic/claude-haiku-4-5` | ✅ APPROVE | 0/10 | 1 287 ms | Correcto — pattern matching estándar |
-| `openai/gpt-4o-mini` | ✅ APPROVE | 1/10 | 2 109 ms | Correcto — `.opsguardignore` interpretado como mecanismo de filtrado, no de evasión |
+| `google/gemini-2.0-flash-001` | ✅ APPROVE | 1/10 | 1 654 ms | Correcto - librería legítima reconocida |
+| `anthropic/claude-haiku-4-5` | ✅ APPROVE | 0/10 | 1 287 ms | Correcto - pattern matching estándar |
+| `openai/gpt-4o-mini` | ✅ APPROVE | 1/10 | 2 109 ms | Correcto - `.opsguardignore` interpretado como mecanismo de filtrado, no de evasión |
 
-> **Verificación de la CRITICAL CONTEXTUAL RULE:** La regla añadida al system prompt ("Importing a library named `pathspec` to implement file ignore patterns is NOT a security bypass — it is standard .gitignore-style filtering") resolvió el falso positivo en los tres modelos. Documentado en `prompts/README.md`.
+> **Verificación de la CRITICAL CONTEXTUAL RULE:** La regla añadida al system prompt ("Importing a library named `pathspec` to implement file ignore patterns is NOT a security bypass - it is standard .gitignore-style filtering") resolvió el falso positivo en los tres modelos. Documentado en `prompts/README.md`.
 
 ---
 
@@ -451,7 +451,7 @@ Los tres modelos detectaron el ataque, pero con `risk_score` más bajo (7-8 vs 9
 
 ```
 Precisión de detección:  Gemini = Claude = GPT   (empate)
-Falsos positivos:        Gemini = Claude = GPT   (empate — todos 0/3)
+Falsos positivos:        Gemini = Claude = GPT   (empate - todos 0/3)
 Latencia:                Claude > Gemini > GPT   (Claude gana por 600 ms)
 Coste:                   Gemini > GPT > Claude   (Gemini gana por 9.5×)
 

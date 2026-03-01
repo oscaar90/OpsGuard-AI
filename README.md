@@ -14,7 +14,7 @@ OpsGuard es una herramienta de Ingeniería de Plataforma que actúa como **puert
 - **🧠 Semantic Logic Check:** Detecta vulnerabilidades complejas como Inyecciones SQL o Backdoors lógicos que el Regex ignora.
 - **⚡ Zero-Latency Focus:** Filtrado inteligente para no bloquear el pipeline innecesariamente.
 - **📝 Automated Audit Logs:** Generación de evidencias forenses en cada ejecución.
-- **🔔 Automatic Security Alerts:** Cuando OpsGuard bloquea un PR, crea automáticamente un GitHub Issue con etiqueta `security-block` — los responsables reciben notificación por email via GitHub sin configuración adicional.
+- **🔔 Automatic Security Alerts:** Cuando OpsGuard bloquea un PR, crea automáticamente un GitHub Issue con etiqueta `security-block` - los responsables reciben notificación por email via GitHub sin configuración adicional.
 
 ---
 
