@@ -43,6 +43,7 @@ class TestEndToEnd:
         aws_diff = _make_diff(aws_content)
 
         monkeypatch.setenv("OPENROUTER_API_KEY", "test-key")
+        monkeypatch.setenv("AI_MODEL", "test-model")
 
         # Lazy imports in scan() resolve from the source modules, not from src.main
         mock_git_manager = mocker.patch("src.ingest.GitManager")
@@ -69,6 +70,7 @@ class TestEndToEnd:
         sql_diff = _make_diff(sql_content)
 
         monkeypatch.setenv("OPENROUTER_API_KEY", "test-key")
+        monkeypatch.setenv("AI_MODEL", "test-model")
 
         mock_git_manager = mocker.patch("src.ingest.GitManager")
         instance = mock_git_manager.return_value
@@ -95,6 +97,7 @@ class TestEndToEnd:
         clean_diff = "+ x = 1\n+ y = 2"
 
         monkeypatch.setenv("OPENROUTER_API_KEY", "test-key")
+        monkeypatch.setenv("AI_MODEL", "test-model")
 
         mock_git_manager = mocker.patch("src.ingest.GitManager")
         instance = mock_git_manager.return_value

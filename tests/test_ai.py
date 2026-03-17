@@ -67,6 +67,7 @@ class TestAIEngineInit:
     def test_init_success(self, monkeypatch, mocker):
         """AIEngine initialises without error when OPENROUTER_API_KEY is set."""
         monkeypatch.setenv("OPENROUTER_API_KEY", "test-key")
+        monkeypatch.setenv("AI_MODEL", "test-model")
         mocker.patch("src.ai.OpenAI")
         engine = AIEngine()
         assert engine is not None
@@ -89,6 +90,7 @@ class TestAnalyzeDiffApprove:
     @pytest.fixture(autouse=True)
     def engine(self, monkeypatch, mocker):
         monkeypatch.setenv("OPENROUTER_API_KEY", "test-key")
+        monkeypatch.setenv("AI_MODEL", "test-model")
         monkeypatch.setenv("OPSGUARD_TELEMETRY_MODE", "silent")
         self.mock_client = mocker.patch("src.ai.OpenAI").return_value
         self.engine = AIEngine()
@@ -142,6 +144,7 @@ class TestAnalyzeDiffBlock:
     @pytest.fixture(autouse=True)
     def engine(self, monkeypatch, mocker):
         monkeypatch.setenv("OPENROUTER_API_KEY", "test-key")
+        monkeypatch.setenv("AI_MODEL", "test-model")
         monkeypatch.setenv("OPSGUARD_TELEMETRY_MODE", "silent")
         self.mock_client = mocker.patch("src.ai.OpenAI").return_value
         self.engine = AIEngine()
@@ -178,6 +181,7 @@ class TestAnalyzeDiffFailClosed:
     @pytest.fixture(autouse=True)
     def engine(self, monkeypatch, mocker):
         monkeypatch.setenv("OPENROUTER_API_KEY", "test-key")
+        monkeypatch.setenv("AI_MODEL", "test-model")
         monkeypatch.setenv("OPSGUARD_TELEMETRY_MODE", "silent")
         self.mock_client = mocker.patch("src.ai.OpenAI").return_value
         self.engine = AIEngine()
@@ -250,6 +254,7 @@ class TestDiffTruncation:
     @pytest.fixture(autouse=True)
     def engine(self, monkeypatch, mocker):
         monkeypatch.setenv("OPENROUTER_API_KEY", "test-key")
+        monkeypatch.setenv("AI_MODEL", "test-model")
         monkeypatch.setenv("OPSGUARD_TELEMETRY_MODE", "silent")
         self.mock_client = mocker.patch("src.ai.OpenAI").return_value
         self.mock_client.chat.completions.create.return_value = _make_mock_response(
@@ -299,6 +304,7 @@ class TestTelemetryModes:
     @pytest.fixture(autouse=True)
     def engine_factory(self, monkeypatch, mocker):
         monkeypatch.setenv("OPENROUTER_API_KEY", "test-key")
+        monkeypatch.setenv("AI_MODEL", "test-model")
         self.mock_openai_class = mocker.patch("src.ai.OpenAI")
         self.mock_client = self.mock_openai_class.return_value
         self.mock_client.chat.completions.create.return_value = _make_mock_response(
