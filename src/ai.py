@@ -68,8 +68,9 @@ class AIEngine:
             timeout=60.0
         )
         
-        # Mantenemos Gemini Flash 2.0 por su ventana de contexto y capacidad de razonamiento
-        self.model = "google/gemini-2.0-flash-001"
+        self.model = os.getenv("AI_MODEL")
+        if not self.model:
+            raise AIEngineError("❌ Missing AI_MODEL — set your preferred model in .env (e.g. google/gemini-2.0-flash-001)")
 
     def analyze_diff(self, diff_text: str) -> Dict[str, Any]:
         print(f"🤖 OpsGuard Brain: Sending diff to {self.model}...")

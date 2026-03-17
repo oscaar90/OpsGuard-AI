@@ -1,159 +1,178 @@
-# 🛡️ OpsGuard-AI
-> **Context-Aware Security Gate for DevOps Pipelines.**
+# 🛡️ OpsGuard AI
+
+> **Stop a leaked secret from destroying your production environment — before the damage is done.**
 
 ![Python](https://img.shields.io/badge/python-3.12-blue)
 ![Status](https://img.shields.io/badge/status-stable-green)
 ![CI/CD](https://img.shields.io/badge/github--actions-enabled-brightgreen)
-
-OpsGuard es una herramienta de Ingeniería de Plataforma diseñada para detener vulnerabilidades antes de que lleguen a producción. Combina **Regex de Alta Entropía** (detección determinista) con **Análisis Semántico por IA** (razonamiento lógico) para reducir falsos positivos y asegurar el ciclo de vida del desarrollo.
-
----
-
-## ✨ Funcionalidades Principales
-- **🛡️ Hybrid Analysis Engine:** Fusión de análisis estático (velocidad) y LLMs (contexto).
-- **🧠 Semantic Logic Check:** Detecta vulnerabilidades complejas como Inyecciones SQL o Backdoors lógicos que el Regex ignora.
-- **⚡ Zero-Latency Focus:** Filtrado inteligente para no bloquear el pipeline innecesariamente.
-- **📝 Automated Audit Logs:** Generación de evidencias forenses en cada ejecución.
+![License](https://img.shields.io/badge/license-AGPL--v3-blue)
 
 ---
 
-## 🛠️ Stack Tecnológico
-Este proyecto ha sido construido utilizando estándares modernos de Ingeniería de Software:
+## The Problem
 
-- **Lenguaje Core:** Python 3.12+
-- **Gestión de Dependencias:** Poetry (Aislamiento de entornos).
-- **IA & NLP:** OpenRouter / Google Gemini Flash 2.0 (Motor de inferencia).
-- **CLI Framework:** Typer & Rich (Interfaz de terminal interactiva).
-- **CI/CD:** GitHub Actions (Automatización del pipeline).
-- **Validación:** Pytest (Testing unitario) & Pre-commit hooks.
+Every week, developers accidentally push passwords, API keys, and database credentials to GitHub.
 
----
+Sometimes it's a `.env` file committed by mistake. Sometimes it's a hardcoded token left in a test. Sometimes it's a subtle SQL injection hiding inside what looks like normal code.
 
-## 📂 Estructura del Proyecto
-Organización modular del código fuente:
+The consequences are real: **stolen data, compromised infrastructure, six-figure cloud bills, and public incidents that end careers.**
 
-```text
-OpsGuard-AI/
-├── .github/workflows/    # Pipelines de CI/CD (GitHub Actions)
-├── docs/                 # Documentación del proyecto
-│   ├── adr/              # Architecture Decision Records (Decisiones técnicas)
-│   └── evidence/         # Capturas y logs de auditoría (Pruebas de ejecución)
-├── prompts/              # Ingeniería de Prompts (System Instructions & Contexto)
-├── src/                  # Código fuente de la aplicación
-│   ├── ai.py             # Motor de análisis semántico (Cliente LLM)
-│   ├── security.py       # Motor de análisis estático (Regex Patterns)
-│   ├── console_ui.py     # Interfaz de usuario (Rich/Typer)
-│   ├── ingest.py         # Procesamiento de Git Diffs y lectura de archivos
-│   └── main.py           # Punto de entrada (Entrypoint)
-├── tests/                # Suite de tests y fixtures (Shooting Range)
-├── web/                  # Recursos estáticos y Landing Page del proyecto
-├── .env.example          # Plantilla de variables de entorno
-├── pyproject.toml        # Configuración de dependencias (Poetry)
-└── README.md             # Punto de entrada de documentación
-```
+Traditional security tools help — but they either miss the subtle ones, or they cry wolf so often that developers start ignoring the alerts.
+
+**OpsGuard was built to fix that.**
 
 ---
 
-## 📂 Documentación Técnica (Engineering Standards)
-Para profundizar en las decisiones de arquitectura, costes y privacidad, consulte los **Architecture Decision Records (ADR)**:
-- [ADR-001: Patrón Gatekeeper Local](/docs/adr/0001-patron-gatekeeper-local.md)
-- [ADR-002: Prompt Engineering & English Tokens](/docs/adr/0002-prompting-en-ingles.md)
-- [ADR-003: Telemetría y FinOps](/docs/adr/0003-telemetria-y-finops.md)
+## What OpsGuard Does
+
+OpsGuard sits inside your development pipeline and acts as a **security checkpoint**: every time a developer tries to push code, OpsGuard reviews it automatically.
+
+Think of it as a bouncer at the door. Fast, smart, and hard to fool.
+
+It works in two stages:
+
+1. **Speed check** — A rule-based engine instantly scans for known dangerous patterns: API keys, passwords, tokens, suspicious credentials. If it finds one, it blocks the push immediately.
+
+2. **Intelligence check** — If nothing obvious is found, an AI reads the code and *understands what it does*. It can detect things no rule can catch — like a login function that bypasses authentication, or a database query that can be manipulated by an attacker.
+
+Only code that passes both gates reaches production.
 
 ---
 
-## ⚡ Quick Start (Modo Evaluación)
-Siga estos pasos para probar la herramienta en local sin necesidad de configurar GitHub Actions.
+## What It Catches
 
-### 1. Instalación
-Requisitos: Python 3.12+ y [Poetry](https://python-poetry.org/docs/).
+| Type | Example | Detection |
+|------|---------|-----------|
+| AWS credentials | `AKIA...` keys in any file | ❌ Blocked instantly |
+| Database passwords | Hardcoded `db_password = "..."` | ❌ Blocked instantly |
+| SQL Injection | Login logic vulnerable to `' OR 1=1` | ❌ Blocked by AI |
+| Logic backdoors | Auth checks that can be bypassed | ❌ Blocked by AI |
+| Clean code | Normal application logic | ✅ Approved |
+| Documentation | Comments, README files | ✅ Approved |
 
-```bash
-# 1. Clonar repositorio
-git clone [https://github.com/oscaar90/OpsGuard-AI.git](https://github.com/oscaar90/OpsGuard-AI.git)
-cd OpsGuard-AI
+---
 
-# 2. Instalar dependencias (Entorno virtual aislado)
-poetry install
-```
+## See It In Action
 
-### 2. Configuración
-Renombre el archivo de ejemplo y añada la API Key proporcionada en la entrega del proyecto.
-```bash
-cp .env.example .env
-# Edite .env y pegue la variable OPENROUTER_API_KEY
-```
+Run OpsGuard against the included test suite of intentionally vulnerable files:
 
-### 3. Ejecutar Prueba de Concepto (Shooting Range)
-Hemos incluido una suite de archivos vulnerables (`tests/fixtures`) para demostrar la detección.
-
-**Comando:**
 ```bash
 poetry run opsguard scan --path tests/fixtures/vulnerable_app
 ```
 
-**Resultados Esperados:**
-- 🔴 **BLOCK (Regex):** `aws_creds.env` (AWS Key detectada).
-- 🔴 **BLOCK (AI Semántico):** `legacy_login.py` (SQL Injection detectada).
-- ✅ **PASS:** Archivos de documentación y código seguro.
+**Gate 1 — Regex Engine:** An AWS key is detected and the pipeline is blocked instantly, before any AI call is made.
+
+![Regex engine blocking an AWS Access Key](<docs/evidence/bloqueo local.png>)
+
+**Gate 2 — AI Semantic Analysis:** No obvious pattern found, but the AI reads the logic and identifies a SQL Injection and a hardcoded backdoor. Risk Score: 9/10.
+
+![AI semantic analysis detecting SQL Injection and logic backdoor](<docs/evidence/Deteccion vulnerabilidades logicas.png>)
+
+Real execution logs and screenshots are available in [`/docs/evidence`](/docs/evidence).
 
 ---
 
-## 🏗️ Arquitectura del Motor
-El sistema analiza los `git diffs` para optimizar costes y latencia mediante un flujo de doble puerta (Two-Gate System).
+## Get Started
+
+**Requirements:** Python 3.12+ and [Poetry](https://python-poetry.org/docs/)
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/oscaar90/OpsGuard-AI.git
+cd OpsGuard-AI
+
+# 2. Install dependencies
+poetry install
+
+# 3. Add your API key
+cp .env.example .env
+# Open .env and paste your OPENROUTER_API_KEY
+```
+
+That's it. Run the scan command above and see it work.
+
+> **Where do I get an API key?**
+> OpsGuard uses [OpenRouter](https://openrouter.ai/) as the AI gateway. Create a free account, generate a key, and set it in your `.env`:
+> ```
+> OPENROUTER_API_KEY=your_key_here
+> AI_MODEL=your_preferred_model
+> ```
+> OpenRouter gives you access to hundreds of models — Gemini, GPT-4, Claude, Mistral, and more. Use whichever fits your needs or budget.
+
+---
+
+## How It Fits Into Your Workflow
+
+OpsGuard is designed to run automatically — you don't have to remember to use it.
 
 ```mermaid
 graph TD
-    User[Developer] -->|Git Push/PR| CLI[OpsGuard CLI]
-    
+    User[Developer] -->|Git Push / Pull Request| CLI[OpsGuard CLI]
+
     subgraph "Hybrid Analysis Engine"
         CLI -->|Step 1: Static Analysis| Regex[Regex Engine]
-        Regex -->|"Match Found?"| Gate1{Sensitive Pattern?}
-        
+        Regex -->|Match found?| Gate1{Sensitive Pattern?}
+
         Gate1 -- Yes --> Block["❌ BLOCK PIPELINE"]
         Gate1 -- No --> AI["Step 2: AI Semantic Analysis"]
-        
+
         AI -->|Contextual Reasoning| Gate2{Risk Score > 7?}
         Gate2 -- Yes --> Block
         Gate2 -- No --> Pass["✅ APPROVE DEPLOY"]
     end
-    
-    Block & Pass --> Report["CI/CD Report (Console/GitHub)"]
+
+    Block & Pass --> Report["CI/CD Report (Console / GitHub Actions)"]
 ```
 
----
+For production use, OpsGuard runs automatically via GitHub Actions on every push and pull request. No manual steps needed.
 
-## 🤝 Estándares de Desarrollo (Conventional Commits)
-Este proyecto sigue estrictamente la especificación **[Conventional Commits](https://www.conventionalcommits.org/)**.
-
-| Tipo | Descripción | Ejemplo |
-| :--- | :--- | :--- |
-| `feat` | Nueva funcionalidad | `feat: add AI semantic analysis engine` |
-| `fix` | Corrección de error | `fix: resolve regex pattern for AWS keys` |
-| `docs` | Cambios en documentación | `docs: add ADR 001` |
-| `chore` | Mantenimiento / Configuración | `chore: update poetry dependencies` |
-| `test` | Tests unitarios o de integración | `test: add shooting range fixtures` |
+Configuration: `.github/workflows/opsguard.yml`
+Required secret: `OPENROUTER_API_KEY` → set it once in your repository settings.
 
 ---
 
-## 🔧 Integración CI/CD
-Para producción, OpsGuard se ejecuta automáticamente en GitHub Actions.
-1. Workflow: `.github/workflows/opsguard.yml`.
-2. Secretos requeridos: `OPENROUTER_API_KEY`. (Facilitados al profesorado en el PDF)
+## For the Technical Reader
 
-### 🧪 Evidencias de Ejecución
-Puede consultar logs reales y capturas de funcionamiento en la carpeta de evidencias:
-👉 [Ver Logs y Capturas](/docs/evidence)
+If you want to go deeper into the architecture, the reasoning behind every design decision is documented in the **Architecture Decision Records (ADR)**:
+
+- [ADR-001: Local Gatekeeper Pattern](/docs/adr/0001-patron-gatekeeper-local.md)
+- [ADR-002: Prompt Engineering in English](/docs/adr/0002-prompting-en-ingles.md)
+- [ADR-003: Telemetry & FinOps](/docs/adr/0003-telemetria-y-finops.md)
+
+**Tech stack:** Python 3.12 · Poetry · OpenRouter (model-agnostic) · Typer · Rich · GitHub Actions · Pytest
 
 ---
 
-⚖️ Licencia
+## Contributing
 
-Este proyecto es software propietario.
+This project follows **[Conventional Commits](https://www.conventionalcommits.org/)**.
 
-El código fuente se hace público únicamente con fines de evaluación académica y demostración técnica.
-No se concede permiso para usar, copiar, modificar, distribuir ni explotar este software sin autorización expresa y por escrito del autor.
+| Type | Use for |
+|------|---------|
+| `feat` | New feature |
+| `fix` | Bug fix |
+| `docs` | Documentation changes |
+| `chore` | Maintenance / config |
+| `test` | Tests |
 
-Consulte el archivo LICENSE para los términos completos.
+---
 
-**TFM - Máster en Desarrollo con IA** | Óscar Sánchez Pérez
+## License
+
+This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.
+
+You are free to use, study, modify, and distribute this software — as long as any derivative work is also released under the same license. If you use OpsGuard as part of a network service, you must also make your modifications publicly available.
+
+**In short:** use it freely, improve it openly, but you cannot take it and close it.
+
+For commercial licensing or partnership inquiries: contacto@oscarsp.dev
+
+See the [LICENSE](LICENSE) file for full terms.
+
+---
+
+---
+
+**Built by [Óscar Sánchez Pérez](https://github.com/oscaar90)**
+
+If OpsGuard saved your pipeline — or you just think the idea is solid — give it a ⭐ and share it. The project is actively evolving and contributions are welcome.
