@@ -4,3 +4,18 @@ __pycache__/
 .venv/
 dist/
 *.egg-info/
+
+# Coverage reports
+.coverage
+htmlcov/
+
+# Editor temp files
+*.kate-swp
+*.swp
+
+# Internal / sensitive documents (never publish)
+docs/*Brais*.md
+docs/*brais*.md
+docs/*oscar*.md
+docs/*Oscar*.md
+*.pdf

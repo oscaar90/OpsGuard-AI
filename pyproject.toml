@@ -1,26 +1,30 @@
 [tool.poetry]
 name = "opsguard-ai"
-version = "0.1.0"
+version = "1.0.2"
 description = "AI-powered DevOps guardian GitHub Action"
-authors = ["Your Name <you@example.com>"]
+authors = ["Óscar Sánchez Pérez <oscaarsanchez90@gmail.com>"]
 readme = "README.md"
 packages = [{include = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
-# Mantenemos Typer con extras para shell completion
+# Keep Typer with extras for shell completion
 typer = {extras = ["all"], version = "^0.9.0"}
-pydantic = "^2.5.0"
 gitpython = "^3.1.40"
 openai = "^1.6.0"
 pyyaml = "^6.0.1"
 python-dotenv = "^1.2.1"
-# FIX: Downgrade a 13.x para satisfacer la restricción (<14.0.0) de Typer
+# FIX: downgrade to 13.x to satisfy Typer's upper bound (<14.0.0)
 rich = "^13.7.0"
+pathspec = "^1.0.4"
+protobuf = ">=5.29.6"  # CVE-2026-0994: force minimum safe version (transitive via openai)
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"
-black = "^23.12.0"
+black = "^24.3.0"
+pytest-cov = "^4.1.0"
+pytest-mock = "^3.12.0"
+pip-audit = "^2.7.0"
 
 [tool.poetry.scripts]
 opsguard = "src.main:app"

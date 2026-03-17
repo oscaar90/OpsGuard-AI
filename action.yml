@@ -1,22 +1,51 @@
-name: "OpsGuard AI"
-description: "AI-powered DevOps guardian for automated code review and security analysis"
-author: "Your Name"
+name: 'OpsGuard AI Security Gate'
+description: >
+  Regex + LLM security gate for CI/CD pipelines. Blocks PRs with secrets, SQL injections, backdoors and supply-chain attacks.
+author: 'Óscar Sánchez Pérez'
 
 branding:
-  icon: "shield"
-  color: "blue"
+  icon: 'shield'
+  color: 'red'
 
 inputs:
-  github_token:
-    description: "GitHub token for API access"
+  openrouter-api-key:
+    description: 'OpenRouter API key for Gate 2 semantic analysis (required).'
     required: true
-  openai_api_key:
-    description: "OpenAI API key for AI analysis"
-    required: true
+  risk-threshold:
+    description: 'Minimum risk score (0–10) to block the pipeline. Default: 7.'
+    required: false
+    default: '7'
+  model:
+    description: 'LLM model identifier (via OpenRouter) for Gate 2 analysis.'
+    required: false
+    default: 'google/gemini-2.0-flash-001'
+  telemetry-mode:
+    description: 'Telemetry verbosity: verbose | summary | silent.'
+    required: false
+    default: 'verbose'
 
 runs:
-  using: "docker"
-  image: "Dockerfile"
-  env:
-    GITHUB_TOKEN: ${{ inputs.github_token }}
-    OPENAI_API_KEY: ${{ inputs.openai_api_key }}
+  using: 'composite'
+  steps:
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install Poetry and OpsGuard dependencies
+      shell: bash
+      run: |
+        curl -sSL https://install.python-poetry.org | python3 -
+        export PATH="$HOME/.local/bin:$PATH"
+        cd "${{ github.action_path }}"
+        poetry config virtualenvs.in-project true
+        poetry install --no-interaction --without dev
+
+    - name: Run OpsGuard Security Scan
+      shell: bash
+      env:
+        OPENROUTER_API_KEY: ${{ inputs.openrouter-api-key }}
+        OPSGUARD_RISK_THRESHOLD: ${{ inputs.risk-threshold }}
+        OPSGUARD_MODEL: ${{ inputs.model }}
+        OPSGUARD_TELEMETRY_MODE: ${{ inputs.telemetry-mode }}
+      run: '"${{ github.action_path }}/.venv/bin/opsguard" scan'

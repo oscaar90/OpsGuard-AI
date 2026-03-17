@@ -3,6 +3,13 @@
 ## Estado
 Aceptado
 
+## Metadata
+
+| Campo | Valor |
+|-------|-------|
+| **Date** | 2026-02-01 |
+| **Deciders** | Óscar Sánchez Pérez |
+
 ## Contexto
 El sistema OpsGuard-AI es una GitHub Action que utiliza modelos de lenguaje (LLMs) para detectar vulnerabilidades de seguridad en código fuente. Sin embargo, enviar código que potencialmente contiene secretos (claves API, contraseñas, tokens de acceso) a una API externa de LLM constituye en sí mismo una fuga de datos sensibles.
 

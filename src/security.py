@@ -44,9 +44,7 @@ class SecurityPolicy:
         config_file = Path(config_path)
 
         if not config_file.exists():
-            raise SecurityPolicyError(
-                f"Configuration file not found: {config_path}"
-            )
+            raise SecurityPolicyError(f"Configuration file not found: {config_path}")
 
         try:
             content = config_file.read_text(encoding="utf-8")
@@ -76,10 +74,12 @@ class SecurityPolicy:
             # Pre-compile regex for performance
             try:
                 compiled = re.compile(rule["pattern"])
-                self.rules.append({
-                    "name": rule["name"],
-                    "pattern": compiled,
-                })
+                self.rules.append(
+                    {
+                        "name": rule["name"],
+                        "pattern": compiled,
+                    }
+                )
             except re.error as e:
                 raise SecurityPolicyError(
                     f"Invalid regex in rule '{rule['name']}': {e}"

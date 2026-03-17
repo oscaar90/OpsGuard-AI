@@ -70,8 +70,11 @@ export default function OpsGuardMonitor() {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [bootSequence, setBootSequence] = useState(true);
+  const [filter, setFilter] = useState<'all' | 'blocked' | 'approved'>('all');
 
   const fetchWorkflowRuns = useCallback(async () => {
+    setLoading(true);
+
     if (!GITHUB_TOKEN || !OWNER || !REPO) {
       setError('Configuration missing. Check your .env.local file.');
       setLoading(false);
@@ -322,12 +325,33 @@ export default function OpsGuardMonitor() {
               <GitCommit className="h-5 w-5 text-blue-500" />
               <h2 className="font-semibold">Security Scan Feed</h2>
             </div>
-            {stats.inProgress > 0 && (
-              <span className="text-xs font-mono text-blue-400 flex items-center gap-1">
-                <Loader2 className="h-3 w-3 animate-spin" />
-                {stats.inProgress} scanning
-              </span>
-            )}
+            <div className="flex items-center gap-3">
+              {stats.inProgress > 0 && (
+                <span className="text-xs font-mono text-blue-400 flex items-center gap-1">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  {stats.inProgress} scanning
+                </span>
+              )}
+              <div className="flex items-center gap-1 font-mono text-xs">
+                {(['all', 'blocked', 'approved'] as const).map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setFilter(f)}
+                    className={`px-2 py-1 rounded transition-colors ${
+                      filter === f
+                        ? f === 'blocked'
+                          ? 'bg-red-500/20 text-red-400 border border-red-500/40'
+                          : f === 'approved'
+                          ? 'bg-green-500/20 text-green-400 border border-green-500/40'
+                          : 'bg-blue-500/20 text-blue-400 border border-blue-500/40'
+                        : 'text-gray-500 hover:text-gray-300'
+                    }`}
+                  >
+                    {f.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           {loading && runs.length === 0 ? (
@@ -353,7 +377,11 @@ export default function OpsGuardMonitor() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-800">
-                  {runs.slice(0, 20).map((run) => (
+                  {runs.filter((run) => {
+                    if (filter === 'blocked') return run.conclusion === 'failure';
+                    if (filter === 'approved') return run.conclusion === 'success';
+                    return true;
+                  }).slice(0, 20).map((run) => (
                     <tr
                       key={run.id}
                       className="hover:bg-gray-800/50 transition-colors cursor-pointer"

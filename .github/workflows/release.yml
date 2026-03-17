@@ -1,0 +1,27 @@
+name: Release 🚀
+
+# Triggers on semantic version tags (e.g. v1.0.0, v0.9.0).
+# Creates a GitHub Release with auto-generated notes from merged PRs.
+# This makes OpsGuard available as a versioned GitHub Action:
+#   uses: oscaar90/OpsGuard-AI@v1
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  release:
+    name: 🚀 Publish GitHub Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # required to create the GitHub Release
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true   # auto-fills body from merged PRs
+          make_latest: true

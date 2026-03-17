@@ -3,42 +3,180 @@ name: OpsGuard Security Gate 🛡️
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-  # Opcional: Si quieres escanear merges a main, deja push, 
-  # pero tu código actual abortará con "SKIP_SCAN" (que es lo correcto por ahora).
-  # Lo mejor es quitar 'push' si solo quieres escanear PRs.
+  # Note: adding 'push' here would trigger the workflow on direct pushes,
+  # but OpsGuard will exit cleanly via SkipScanSignal (non-PR events are skipped).
+  # PR-only triggering is the recommended configuration.
 
 jobs:
-  security-audit:
-    name: 🕵️‍♂️ Semantic Security Scan
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Job 1 - Code Quality: formatting check (black)
+  # ─────────────────────────────────────────────────────────────────────────────
+  lint:
+    name: 🔍 Code Quality
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pull-requests: write # Necesario para comentar en el PR (Futuro)
-    
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # CRÍTICO: Baja todo el historial para poder comparar diffs
-      
+
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      
+
       - name: Install Poetry
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
+      - name: Cache Poetry virtualenv
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pypoetry/virtualenvs
+          key: ${{ runner.os }}-py3.12-poetry-${{ hashFiles('poetry.lock') }}
+          restore-keys: ${{ runner.os }}-py3.12-poetry-
+
       - name: Install Dependencies
-        run: poetry install --no-interaction --sync
+        run: poetry install --no-interaction
+
+      - name: Check formatting (black)
+        run: poetry run black --check src/ tests/
+
+      - name: Validate project structure (poetry check)
+        run: poetry check
+
+      - name: Audit dependencies for known CVEs (pip-audit)
+        run: poetry run pip-audit --progress-spinner off
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Job 2 - Unit Tests: matrix across all supported Python versions
+  # ─────────────────────────────────────────────────────────────────────────────
+  test:
+    name: 🧪 Tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12']
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Cache Poetry virtualenv
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pypoetry/virtualenvs
+          key: ${{ runner.os }}-py${{ matrix.python-version }}-poetry-${{ hashFiles('poetry.lock') }}
+          restore-keys: ${{ runner.os }}-py${{ matrix.python-version }}-poetry-
+
+      - name: Install Dependencies
+        run: poetry install --no-interaction
+
+      - name: Run Test Suite
+        run: poetry run pytest tests/ -v --cov=src --cov-report=term-missing --cov-fail-under=80
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Job 3 - Security Scan: runs only when lint + tests pass
+  # ─────────────────────────────────────────────────────────────────────────────
+  security-scan:
+    name: 🕵️‍♂️ Semantic Security Scan
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    permissions:
+      contents: read
+      issues: write   # Required: create GitHub Issue on security block
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Required: full history needed to compare PR base and head SHAs
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Cache Poetry virtualenv
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pypoetry/virtualenvs
+          key: ${{ runner.os }}-py3.12-poetry-${{ hashFiles('poetry.lock') }}
+          restore-keys: ${{ runner.os }}-py3.12-poetry-
+
+      - name: Install Dependencies
+        run: poetry install --no-interaction
 
       - name: Run OpsGuard AI Scan
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPSGUARD_RISK_THRESHOLD: 7
-        run: |
-          # Ejecuta el escáner. 
-          # En PRs, esto analizará los cambios propuestos.
-          poetry run opsguard scan
+        run: poetry run opsguard scan
+
+      - name: Create Security Alert Issue
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            // Create label if it does not exist yet
+            try {
+              await github.rest.issues.createLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: 'security-block',
+                color: 'B60205',
+                description: 'Automatic security alert created by OpsGuard when a PR is blocked',
+              });
+            } catch (_) { /* label already exists */ }
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🚨 OpsGuard blocked PR #${pr.number}: ${pr.title}`,
+              labels: ['security-block'],
+              body: [
+                '## OpsGuard Security Alert',
+                '',
+                `OpsGuard detected a security threat and blocked **PR #${pr.number}** from being merged into \`${pr.base.ref}\`.`,
+                '',
+                '| Field | Value |',
+                '|-------|-------|',
+                `| **PR** | [#${pr.number} - ${pr.title}](${pr.html_url}) |`,
+                `| **Author** | @${pr.user.login} |`,
+                `| **Branch** | \`${pr.head.ref}\` → \`${pr.base.ref}\` |`,
+                `| **CI Run** | [View full security report](${runUrl}) |`,
+                `| **Timestamp** | ${new Date().toISOString()} |`,
+                '',
+                '### Next steps',
+                '1. Review the CI run logs linked above for the full OpsGuard security report.',
+                '2. Fix the detected issue in the branch `' + pr.head.ref + '`.',
+                '3. Push the fix - OpsGuard will re-scan automatically.',
+                '4. Close this issue once the PR is approved or discarded.',
+                '',
+                '> This issue was created automatically by OpsGuard. Do not merge the PR until this alert is resolved.',
+              ].join('\n'),
+            });

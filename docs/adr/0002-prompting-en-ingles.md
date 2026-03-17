@@ -3,6 +3,13 @@
 ## Estado
 Aceptado
 
+## Metadata
+
+| Campo | Valor |
+|-------|-------|
+| **Date** | 2026-02-01 |
+| **Deciders** | Óscar Sánchez Pérez |
+
 ## Contexto
 OpsGuard-AI utiliza modelos de lenguaje (Claude de Anthropic, Gemini de Google) como motor de razonamiento para detectar vulnerabilidades de seguridad en código. La elección del idioma para los prompts del sistema tiene implicaciones directas en:
 
