@@ -1,56 +1,74 @@
-# 🛡️ OpsGuard AI
+<!-- LOGO + TAGLINE -->
+<p align="center">
+  <!-- Logo placeholder — add docs/assets/logo.png when ready -->
+  <br/>
+  <strong>🛡️ OpsGuard AI</strong>
+  <br/>
+  The AI-powered security gate for your GitHub Actions pipeline.
+  <br/>
+  <em>Blocks vulnerable code before it reaches production. Zero config.</em>
+</p>
 
-> **El guardia de seguridad que nunca duerme, revisando tu código antes de que sea un problema.**
+<!-- BADGES -->
+<p align="center">
+  <a href="https://github.com/oscaar90/OpsGuard-AI/stargazers"><img src="https://img.shields.io/github/stars/oscaar90/OpsGuard-AI?style=social" alt="GitHub stars"/></a>
+  <a href="https://github.com/oscaar90/OpsGuard-AI/blob/main/LICENSE"><img src="https://img.shields.io/github/license/oscaar90/OpsGuard-AI" alt="License"/></a>
+  <a href="https://github.com/oscaar90/OpsGuard-AI/actions"><img src="https://img.shields.io/github/actions/workflow/status/oscaar90/OpsGuard-AI/ci.yml?label=CI" alt="CI"/></a>
+  <a href="https://github.com/oscaar90/OpsGuard-AI/issues"><img src="https://img.shields.io/github/issues/oscaar90/OpsGuard-AI" alt="Issues"/></a>
+  <img src="https://img.shields.io/badge/python-3.12-blue" alt="Python"/>
+  <img src="https://img.shields.io/badge/status-stable-brightgreen" alt="Status"/>
+</p>
 
-![Python](https://img.shields.io/badge/python-3.12-blue)
-![Status](https://img.shields.io/badge/status-stable-green)
-![CI/CD](https://img.shields.io/badge/github--actions-enabled-brightgreen)
+<!-- LANGUAGE LINKS -->
+<p align="center">
+  <a href="README.md">English</a> · <a href="README_ES.md">Español</a>
+</p>
 
 ---
 
-## El problema que resuelve OpsGuard
+<!-- GIF DEMO — uncomment when demo.gif is ready
+## See it in Action
 
-Imagina que tienes un restaurante y cada día llegan nuevos ingredientes. Antes de meterlos en la cocina, alguien tiene que revisarlos para asegurarse de que no hay nada en mal estado. 
+![OpsGuard blocking a vulnerable PR](docs/assets/demo.gif)
 
-En el mundo del software pasa lo mismo. Los equipos escriben código nuevo todos los días y, por error o por prisa, a veces dejan brechas de seguridad abiertas (como credenciales olvidadas o fallos lógicos graves) que pueden ser explotadas por actores maliciosos.
+> A pull request with a hardcoded AWS key gets submitted → OpsGuard scans it → blocks the merge → opens a GitHub Issue with the full report.
 
-**OpsGuard es el revisor en la puerta de tu infraestructura.** Analiza cada cambio en el código automáticamente y, si detecta un riesgo, bloquea la entrada antes de que llegue a producción y afecte a tus usuarios.
+---
+-->
 
-## ¿Cómo funciona? (El control del aeropuerto)
+## The Problem
 
-OpsGuard revisa tu código simulando el control de seguridad de un aeropuerto, en dos fases:
+Every day, developers push code that contains security risks: hardcoded secrets, SQL injection patterns, backdoors left from debugging, or vulnerabilities silently introduced by AI code assistants like Copilot or Cursor.
 
-1. **El escáner de rayos X (Búsqueda ultrarrápida):** Revisa el código en milisegundos buscando cosas obvias y prohibidas, como contraseñas, tokens o claves secretas. Funciona 100% en local.
-2. **El agente experto (Inteligencia Artificial):** Si el escáner no pita, una IA lee el código para entender el *contexto*. Busca trampas ocultas, errores de lógica o código generado por otras IAs (como Copilot) que parezca normal pero sea vulnerable.
+Traditional scanners look for exact keyword matches. They miss context. They miss the subtle things.
 
-**Si en cualquiera de las dos puertas se detecta un problema, el código no pasa.**
+**OpsGuard reads the code the way a security engineer would** — and it lives in your CI pipeline.
 
-## ¿Por qué OpsGuard?
+---
 
-A diferencia de otras herramientas clásicas que solo buscan palabras exactas en un diccionario, OpsGuard **entiende** lo que hace el código.
+## How It Works
 
-- 🔒 **Privacidad local:** Las credenciales se detectan en tu propio entorno mediante análisis estático y nunca viajan a ninguna IA externa.
-- 💸 **Coste-eficiente:** El análisis semántico tiene un coste marginal de aproximadamente $0.001 por cada revisión.
-- 🤖 **Auditor de IA:** Detecta automáticamente vulnerabilidades introducidas por herramientas de autocompletado de código como Copilot o Cursor.
-- 🔔 **Alertas integradas:** Al bloquear una amenaza, genera un informe detallado directamente como un Issue en GitHub con los pasos para su resolución.
+OpsGuard runs a two-gate pipeline on every pull request:
 
-📊 **[Ver comparativa con otras herramientas y métricas de rendimiento](./docs/benchmark-models.md)**
+**Gate 1 — Local Gatekeeper (regex, milliseconds)**
+Scans for hardcoded secrets and known-bad patterns entirely on your infrastructure. Nothing leaves your environment.
 
-## Ejemplos de lo que detecta
-- Contraseñas, Tokens, claves de APIs (AWS, Stripe, GitHub, etc.) o credenciales olvidadas en el código.
-- Ataques de inyección (ej. SQL Injections).
-- Puertas traseras ("Backdoors") dejadas activas para hacer pruebas.
-- Errores tipográficos catastróficos que apuntan a servidores piratas (Typosquatting).
+**Gate 2 — AI Brain (LLM, ~$0.001/scan)**
+If Gate 1 passes, the diff is sent to an LLM for semantic analysis. It understands context: what the code *does*, not just what it *says*.
 
-🔍 **[Ver casos reales de código bloqueado por OpsGuard](./docs/ejemplos-reales.md)**
+If either gate triggers → the PR is blocked and a GitHub Issue is opened with a detailed remediation report.
 
-## Ponlo a trabajar en 2 minutos
+```
+Git Diff → Gate 1: Regex (local) → Gate 2: LLM (semantic) → Report
+```
 
-OpsGuard se instala directamente en tu repositorio de GitHub. No tienes que mantener servidores ni instalar nada raro.
+---
 
-1. Consigue una API Key gratuita en [OpenRouter](https://openrouter.ai).
-2. Añádela a tu repositorio de GitHub en *Settings → Secrets* con el nombre `OPENROUTER_API_KEY`. *(Esto es lo que permite que la acción de GitHub se conecte a la IA y analice el código de forma automática cada vez que alguien intente subir cambios en un Pull Request).*
-3. Crea un archivo llamado `.github/workflows/opsguard.yml` en tu repositorio y pega esto:
+## Get Started in 2 Minutes
+
+1. Get a free API key at [OpenRouter](https://openrouter.ai).
+2. Add it to your repo: *Settings → Secrets → New secret* → name it `OPENROUTER_API_KEY`.
+3. Create `.github/workflows/opsguard.yml` in your repo:
 
 ```yaml
 name: OpsGuard Security Gate
@@ -73,26 +91,70 @@ jobs:
           openrouter-api-key: ${{ secrets.OPENROUTER_API_KEY }}
 ```
 
-**¡Ya está!** Tu código ahora tiene un guardia de seguridad revisando cada cambio 24/7.
+That's it. Every PR from now on goes through the security gate.
 
 ---
 
-## Documentación para Ingenieros
+## What It Catches
 
-Si quieres meterte en las tripas técnicas del proyecto, aquí tienes todo el detalle:
+- Hardcoded secrets — AWS keys, Stripe tokens, GitHub PATs, database passwords
+- Injection attacks — SQL injection, command injection patterns
+- Active backdoors — test hooks, debug endpoints left in production code
+- Typosquatting — dependency names pointing to malicious packages
+- AI-generated vulnerabilities — insecure patterns introduced by Copilot, Cursor, or similar tools
 
-- **[Guía de instalación y pruebas en local](./docs/guia-local.md)**
-- **[Decisiones de Arquitectura (ADRs)](./docs/adr/)**
-- **[Estrategia de Inteligencia Artificial (Prompts)](./prompts/)**
-- **[Registro de Cambios (Changelog)](./CHANGELOG.md)**
+[See real examples of code blocked by OpsGuard](./docs/ejemplos-reales.md)
 
 ---
 
-## Licencia y Uso Comercial (Dual Licensing)
+## Why OpsGuard vs Traditional Tools
 
-OpsGuard AI utiliza un modelo de **Licencia Dual**:
+| Feature | OpsGuard AI | Snyk | SonarQube | Semgrep |
+|---------|:-----------:|:----:|:---------:|:-------:|
+| LLM semantic analysis | ✅ | ❌ | ❌ | ❌ |
+| Zero-config GitHub Action | ✅ | ❌ | ❌ | ⚠️ |
+| Secrets stay local (Gate 1) | ✅ | ✅ | ❌ | ✅ |
+| AI-generated code audit | ✅ | ❌ | ❌ | ❌ |
+| Cost per scan | ~$0.001 | Free tier | Free tier | Free tier |
+| Auto GitHub Issue on block | ✅ | ❌ | ❌ | ❌ |
 
-1. **Open Source (AGPLv3)**: Puedes usar, modificar y distribuir OpsGuard de forma gratuita bajo los términos de la [GNU Affero General Public License v3.0 (AGPLv3)](LICENSE). Ideal para proyectos personales, código abierto o pruebas no productivas. *(Nota: El uso de código bajo licencia AGPL en entornos corporativos suele requerir abrir el código fuente de los sistemas vinculados).*
-2. **Licencia Comercial**: Si deseas utilizar OpsGuard en una empresa, integrarlo en flujos de trabajo corporativos cerrados o evitar las restricciones de la licencia AGPL (copyleft) en tu infraestructura privativa, **es necesario adquirir una Licencia Comercial**.
+[Full benchmark and model comparison](./docs/benchmark-models.md)
 
-📧 Para obtener permisos comerciales o resolver dudas sobre licencias, contacta en: **oscar@oscarai.tech**
+---
+
+## Key Design Decisions
+
+- Gate 1 always runs locally — secrets never leave your environment before being caught (ADR-0001)
+- All LLM prompts are in English to reduce hallucinations (ADR-0002)
+- Fail-closed: any error produces a BLOCK verdict, not a pass (ADR-0004)
+- Diffs are truncated at 30 KB to keep costs predictable (ADR-0005)
+
+Full architecture decisions in [`docs/adr/`](./docs/adr/).
+
+---
+
+## Documentation
+
+- [Local setup and testing guide](./docs/guia-local.md)
+- [Architecture Decision Records (ADRs)](./docs/adr/)
+- [AI strategy and prompts](./prompts/)
+- [Changelog](./CHANGELOG.md)
+
+---
+
+## License
+
+OpsGuard AI uses a **dual license model**:
+
+- **Open Source (AGPLv3)** — free for personal projects, open-source, and non-production use. See [LICENSE](LICENSE).
+- **Commercial License** — required for closed corporate environments or when AGPLv3 copyleft is incompatible with your stack.
+
+For commercial licensing: **oscar@oscarai.tech**
+
+---
+
+<p align="center">
+  <em>Built as a Master's Thesis (TFM) — graded <strong>Excellent</strong>.</em>
+  <br/>
+  <a href="https://ops-guard-ai-35ac.vercel.app/">Website</a> · <a href="https://github.com/oscaar90/OpsGuard-AI/issues">Issues</a> · <a href="mailto:oscar@oscarai.tech">Contact</a>
+</p>
