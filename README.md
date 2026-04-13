@@ -47,8 +47,6 @@ That makes it useful for the kinds of changes that increasingly slip into repos 
 
 ![OpsGuard blocking a malicious PR](./docs/assets/demo.gif)
 
-Full-resolution recording: [demo.webm](./docs/assets/demo.webm)
-
 Example: a pull request adds a developer backdoor.
 
 ```python
