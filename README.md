@@ -45,7 +45,12 @@ That makes it useful for the kinds of changes that increasingly slip into repos 
 
 ## See It In Action
 
-> GIF demo coming next. For now, the repo includes real fixtures, real benchmark outputs, and reproducible local tests.
+<video controls autoplay loop muted playsinline width="100%">
+  <source src="docs/assets/demo.webm" type="video/webm">
+</video>
+
+If the embedded player does not render in your GitHub view, open the raw asset here:
+[demo.webm](./docs/assets/demo.webm)
 
 Example: a pull request adds a developer backdoor.
 
