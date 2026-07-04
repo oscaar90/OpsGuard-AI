@@ -1,0 +1,29 @@
+# Script de escaneo montado en el Job. Crea un repo git efímero con una línea base
+# limpia, introduce un cambio con dos claves AWS hardcodeadas y lanza `opsguard scan`.
+# Gate 1 debe cazarlas y salir con BLOCK (exit 1). Sin API key: solo detección local.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: opsguard-scan-demo
+  namespace: opsguard
+data:
+  scan_demo.sh: |
+    set -e
+    echo "=== preparando repo de prueba dentro del pod ==="
+    cd /tmp
+    rm -rf demo && mkdir demo && cd demo
+    git init -q
+    git config user.email lab@opsguard.local
+    git config user.name opsguard-lab
+    cp /app/opsguard.yml .
+    echo "print('hello')" > app.py
+    git add .
+    git commit -qm baseline
+    echo "=== introduciendo PR con secretos hardcodeados (caso malicioso) ==="
+    cat > config.py <<PY
+    AWS_ACCESS_KEY_ID = "AKIAIOSFODNN7EXAMPLE"
+    AWS_SECRET_ACCESS_KEY = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+    PY
+    git add config.py
+    echo "=== opsguard scan (Gate 1, sin API key) ==="
+    opsguard scan

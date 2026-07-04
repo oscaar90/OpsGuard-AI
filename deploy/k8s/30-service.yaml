@@ -1,0 +1,24 @@
+# Service ClusterIP hacia el pod runner.
+#
+# NOTA HONESTA (ver DIARIO_LAB.md): OpsGuard NO expone ningún puerto HTTP — es una
+# CLI batch. Este Service (y el Ingress) se escriben como ejercicio de manifiestos
+# de cara al CKA, pero no enrutan tráfico real: no hay proceso escuchando en el
+# puerto 8080. Se declara el puerto para tener el manifiesto completo y consistente;
+# funcionalmente apunta a nada hasta que OpsGuard tenga una superficie HTTP (que hoy
+# no toca añadir — sería rediseñar la herramienta).
+apiVersion: v1
+kind: Service
+metadata:
+  name: opsguard
+  namespace: opsguard
+  labels:
+    app.kubernetes.io/name: opsguard
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: opsguard
+    app.kubernetes.io/component: runner
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080

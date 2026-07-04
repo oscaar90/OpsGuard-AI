@@ -1,0 +1,51 @@
+# Deployment "runner": mantiene vivo un pod con la imagen de OpsGuard para poder
+# hacer `kubectl exec` y lanzar escaneos on-demand.
+#
+# NOTA HONESTA (ver DIARIO_LAB.md): OpsGuard es una CLI batch que escanea un diff
+# y termina — no es un servidor. El primitivo correcto en producción sería un Job
+# o CronJob disparado por CI, no un Deployment de larga vida. Aquí se usa un
+# Deployment como banco de pruebas para exec/troubleshooting y práctica de
+# manifiestos. El comando `sleep infinity` sobreescribe el ENTRYPOINT de la imagen.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opsguard-runner
+  namespace: opsguard
+  labels:
+    app.kubernetes.io/name: opsguard
+    app.kubernetes.io/component: runner
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: opsguard
+      app.kubernetes.io/component: runner
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: opsguard
+        app.kubernetes.io/component: runner
+    spec:
+      containers:
+        - name: opsguard
+          image: opsguard:lab
+          imagePullPolicy: IfNotPresent
+          command: ["sleep", "infinity"]
+          envFrom:
+            - secretRef:
+                name: opsguard-secrets
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: false  # la imagen corre como root; endurecer es trabajo de lab 2
+          readinessProbe:
+            exec:
+              command: ["test", "-f", "/app/opsguard.yml"]
+            initialDelaySeconds: 3
+            periodSeconds: 10

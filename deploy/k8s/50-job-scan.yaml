@@ -1,0 +1,48 @@
+# Job de escaneo: el primitivo K8s que SÍ encaja con OpsGuard (batch: corre una vez
+# y termina). Demuestra un escaneo real DENTRO del clúster.
+#
+# El script (montado desde el ConfigMap opsguard-scan-demo) crea un repo git efímero
+# con una línea base limpia y luego introduce un "PR malicioso" con dos claves AWS
+# hardcodeadas. OpsGuard Gate 1 (detección local determinista, sin API key) las caza
+# y sale con código 1 → el Job termina en Failed, que es exactamente el comportamiento
+# fail-closed esperado. La salida se ve en `kubectl -n opsguard logs job/opsguard-scan`.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: opsguard-scan
+  namespace: opsguard
+  labels:
+    app.kubernetes.io/name: opsguard
+    app.kubernetes.io/component: scan-job
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: opsguard
+        app.kubernetes.io/component: scan-job
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: scan
+          image: opsguard:lab
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "/scripts/scan_demo.sh"]
+          envFrom:
+            - secretRef:
+                name: opsguard-secrets
+          volumeMounts:
+            - name: scan-script
+              mountPath: /scripts
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+      volumes:
+        - name: scan-script
+          configMap:
+            name: opsguard-scan-demo

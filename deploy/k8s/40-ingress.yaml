@@ -1,0 +1,28 @@
+# Ingress Traefik (controlador por defecto de k3s).
+#
+# NOTA HONESTA (ver DIARIO_LAB.md): enruta hacia el Service `opsguard`, que a su vez
+# no tiene backend HTTP escuchando. Por tanto una petición a http://opsguard.localhost/
+# resolverá el Ingress y el Service pero devolverá error de backend (502/504): no hay
+# nada escuchando en el puerto. Se incluye para practicar el manifiesto de Ingress con
+# Traefik y para dejar explícita la tensión: una herramienta batch no tiene una URL que
+# exponer. El primitivo honesto es el Job (ver 50-job-scan.yaml).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: opsguard
+  namespace: opsguard
+  annotations:
+    spec.ingressClassName: traefik
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: opsguard.localhost
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: opsguard
+                port:
+                  number: 80
