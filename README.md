@@ -234,7 +234,7 @@ For commercial licensing: **oscar@oscarsperez.com**
 ---
 
 <p align="center">
-  <em>Built as a Master's Thesis (TFM) — graded <strong>Excellent</strong>.</em>
+  <em>Built as a Master's Thesis (TFM) — graded <strong>Pass</strong>.</em>
   <br/>
   <a href="https://github.com/oscaar90/OpsGuard-AI/issues">Issues</a> · <a href="mailto:oscar@oscarsperez.com">Contact</a>
 </p>
