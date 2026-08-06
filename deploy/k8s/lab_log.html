@@ -1,0 +1,516 @@
+<title>OpsGuard sobre k3s — log del lab</title>
+<style>
+  :root {
+    --bg: #f5f7f6; --surface: #ffffff; --surface-2: #f0f3f1;
+    --ink: #16201c; --muted: #5b6a62; --faint: #8a978f;
+    --border: #e1e6e2; --border-strong: #cdd5d0;
+    --accent: #0c6d5d; --accent-soft: #0f7d6b1a;
+    --pass: #1f8a4c; --pass-soft: #1f8a4c14;
+    --fail: #c2384a; --fail-soft: #c2384a12;
+    --hold: #a76a08; --hold-soft: #a76a0814;
+    --code-bg: #10201c; --code-ink: #d7e4de; --code-faint: #7f9389;
+    --shadow: 0 1px 2px rgba(16,32,28,.04), 0 6px 20px rgba(16,32,28,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0c1210; --surface: #121a17; --surface-2: #172019;
+      --ink: #e6ece8; --muted: #92a19a; --faint: #6d7c74;
+      --border: #25302b; --border-strong: #32403a;
+      --accent: #4fd6bd; --accent-soft: #4fd6bd1a;
+      --pass: #4ecb7d; --pass-soft: #4ecb7d16;
+      --fail: #f2788a; --fail-soft: #f2788a16;
+      --hold: #e0a13a; --hold-soft: #e0a13a16;
+      --code-bg: #0a120f; --code-ink: #d2e0d9; --code-faint: #6f8279;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 26px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #f5f7f6; --surface: #ffffff; --surface-2: #f0f3f1;
+    --ink: #16201c; --muted: #5b6a62; --faint: #8a978f;
+    --border: #e1e6e2; --border-strong: #cdd5d0;
+    --accent: #0c6d5d; --accent-soft: #0f7d6b1a;
+    --pass: #1f8a4c; --pass-soft: #1f8a4c14;
+    --fail: #c2384a; --fail-soft: #c2384a12;
+    --hold: #a76a08; --hold-soft: #a76a0814;
+    --code-bg: #10201c; --code-ink: #d7e4de; --code-faint: #7f9389;
+    --shadow: 0 1px 2px rgba(16,32,28,.04), 0 6px 20px rgba(16,32,28,.05);
+  }
+  :root[data-theme="dark"] {
+    --bg: #0c1210; --surface: #121a17; --surface-2: #172019;
+    --ink: #e6ece8; --muted: #92a19a; --faint: #6d7c74;
+    --border: #25302b; --border-strong: #32403a;
+    --accent: #4fd6bd; --accent-soft: #4fd6bd1a;
+    --pass: #4ecb7d; --pass-soft: #4ecb7d16;
+    --fail: #f2788a; --fail-soft: #f2788a16;
+    --hold: #e0a13a; --hold-soft: #e0a13a16;
+    --code-bg: #0a120f; --code-ink: #d2e0d9; --code-faint: #6f8279;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 26px rgba(0,0,0,.35);
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 16px; line-height: 1.6;
+    font-feature-settings: "kern";
+    -webkit-font-smoothing: antialiased;
+  }
+  .mono { font-family: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, Consolas, monospace; }
+
+  .wrap { max-width: 860px; margin: 0 auto; padding: clamp(20px, 4vw, 56px) clamp(16px, 4vw, 40px) 96px; }
+
+  /* header */
+  header { margin-bottom: 44px; }
+  .eyebrow {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--accent); margin: 0 0 14px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .eyebrow::before { content: ""; width: 26px; height: 1px; background: var(--accent); opacity: .6; }
+  h1 {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: clamp(1.7rem, 4.5vw, 2.5rem); line-height: 1.12; font-weight: 600;
+    letter-spacing: -.01em; text-wrap: balance; margin: 0 0 16px;
+  }
+  h1 .brand { color: var(--accent); }
+  .lede { font-size: 1.08rem; color: var(--muted); max-width: 62ch; margin: 0 0 24px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px 10px; }
+  .chip {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12.5px; color: var(--muted);
+    background: var(--surface); border: 1px solid var(--border);
+    padding: 5px 11px; border-radius: 999px;
+  }
+  .chip b { color: var(--ink); font-weight: 600; }
+
+  /* section scaffolding */
+  section { margin-top: 52px; }
+  h2 {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 1.02rem; font-weight: 600; letter-spacing: .02em;
+    margin: 0 0 6px; display: flex; align-items: baseline; gap: 12px;
+  }
+  h2 .num {
+    color: var(--accent); font-size: .82em; opacity: .85;
+  }
+  .sub { color: var(--muted); font-size: .95rem; margin: 0 0 22px; max-width: 64ch; }
+  h3 { font-size: 1rem; font-weight: 650; margin: 30px 0 10px; letter-spacing: -.005em; }
+  p { max-width: 66ch; }
+  a { color: var(--accent); text-underline-offset: 2px; text-decoration-thickness: 1px; }
+
+  /* status board */
+  .board { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .stat {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 15px 15px 16px; box-shadow: var(--shadow);
+    position: relative; overflow: hidden;
+  }
+  .stat::before {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  }
+  .stat.ok::before { background: var(--pass); }
+  .stat.no::before { background: var(--fail); }
+  .stat.partial::before { background: var(--hold); }
+  .stat .k {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--faint);
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
+  }
+  .stat .t { font-size: .96rem; font-weight: 600; line-height: 1.3; }
+  .stat .d { font-size: .82rem; color: var(--muted); margin-top: 6px; line-height: 1.45; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .dot.ok { background: var(--pass); box-shadow: 0 0 0 3px var(--pass-soft); }
+  .dot.no { background: var(--fail); box-shadow: 0 0 0 3px var(--fail-soft); }
+  .dot.partial { background: var(--hold); box-shadow: 0 0 0 3px var(--hold-soft); }
+
+  /* badges inline */
+  .badge {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11.5px; font-weight: 600; letter-spacing: .03em;
+    padding: 2px 8px; border-radius: 6px; white-space: nowrap;
+  }
+  .badge.ok { color: var(--pass); background: var(--pass-soft); }
+  .badge.no { color: var(--fail); background: var(--fail-soft); }
+  .badge.hold { color: var(--hold); background: var(--hold-soft); }
+
+  /* callout */
+  .callout {
+    border: 1px solid var(--border); border-left: 3px solid var(--hold);
+    background: var(--hold-soft); border-radius: 10px; padding: 18px 20px; margin: 24px 0;
+  }
+  .callout.fail { border-left-color: var(--fail); background: var(--fail-soft); }
+  .callout .lbl {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--hold);
+    margin: 0 0 8px; font-weight: 700;
+  }
+  .callout.fail .lbl { color: var(--fail); }
+  .callout p { margin: 0; font-size: .96rem; }
+  .callout p + p { margin-top: 10px; }
+
+  /* timeline */
+  .tl { list-style: none; margin: 0; padding: 0; }
+  .tl li { position: relative; padding: 0 0 22px 30px; border-left: 1.5px solid var(--border-strong); margin-left: 6px; }
+  .tl li:last-child { border-left-color: transparent; padding-bottom: 0; }
+  .tl li::before {
+    content: ""; position: absolute; left: -6.5px; top: 4px; width: 11px; height: 11px;
+    border-radius: 50%; background: var(--surface); border: 2px solid var(--accent);
+  }
+  .tl .time {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12px; color: var(--accent); font-weight: 600; letter-spacing: .02em;
+  }
+  .tl .ev { font-weight: 600; margin: 3px 0 4px; font-size: .97rem; }
+  .tl .dt { color: var(--muted); font-size: .9rem; max-width: 60ch; }
+  .tl code { font-size: .85em; }
+
+  /* code blocks */
+  .code {
+    position: relative; margin: 16px 0; border-radius: 11px; overflow: hidden;
+    border: 1px solid var(--border); background: var(--code-bg); box-shadow: var(--shadow);
+  }
+  .code .bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 12px; background: rgba(255,255,255,.03); border-bottom: 1px solid rgba(255,255,255,.06);
+  }
+  .code .title {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11.5px; color: var(--code-faint); letter-spacing: .04em;
+  }
+  .code .copy {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px; color: var(--code-faint); background: transparent;
+    border: 1px solid rgba(255,255,255,.12); border-radius: 6px; padding: 3px 9px;
+    cursor: pointer; transition: color .15s, border-color .15s;
+  }
+  .code .copy:hover { color: var(--code-ink); border-color: rgba(255,255,255,.28); }
+  .code .copy:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .code pre {
+    margin: 0; padding: 14px 16px; overflow-x: auto;
+    font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    font-size: 13px; line-height: 1.62; color: var(--code-ink);
+  }
+  .code pre .c { color: var(--code-faint); } /* comment */
+  .code pre .p { color: var(--accent); }     /* prompt / key */
+  .code pre .g { color: #6fd39a; }            /* good output */
+  .code pre .r { color: #f2889a; }            /* alert output */
+
+  .note {
+    font-size: .86rem; color: var(--muted); margin: 10px 0 0;
+    padding-left: 14px; border-left: 2px solid var(--border-strong);
+  }
+  hr { border: none; border-top: 1px solid var(--border); margin: 56px 0; }
+
+  /* decisions */
+  .dec { display: grid; gap: 14px; }
+  .dec .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 18px 20px; box-shadow: var(--shadow);
+  }
+  .dec .card .who {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent);
+    margin-bottom: 8px; font-weight: 700;
+  }
+  .dec .card p { margin: 0; font-size: .95rem; }
+  footer { margin-top: 64px; padding-top: 22px; border-top: 1px solid var(--border); color: var(--faint); font-size: .82rem; }
+  footer .mono { color: var(--muted); }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">lab de una mañana · 2026-07-04</p>
+    <h1><span class="brand">OpsGuard-AI</span> sobre k3s<br>lo que se desplegó, qué funciona y qué no</h1>
+    <p class="lede">No un resumen para creerte: un log para que lo veas, lo repliques desde cero y lo trastees. Cada comando de aquí es copiable y se ejecutó de verdad en tu nodo <span class="mono">nobara-pc</span>.</p>
+    <div class="meta">
+      <span class="chip">clúster <b>k3s v1.34.6</b></span>
+      <span class="chip">1 nodo · <b>nobara-pc</b></span>
+      <span class="chip">timebox <b>~4h</b> · usado <b>~35 min</b></span>
+      <span class="chip">namespace <b>opsguard</b></span>
+      <span class="chip">sin API key <b>(solo Gate 1)</b></span>
+    </div>
+  </header>
+
+  <!-- STATUS BOARD -->
+  <section id="estado">
+    <h2><span class="num">//</span> Los 5 objetivos, estado real</h2>
+    <p class="sub">Verde = funciona y lo verificaste. Ámbar = matiz importante. Rojo = no entra hoy, y por qué no es deuda.</p>
+    <div class="board">
+      <div class="stat ok">
+        <div class="k">01 · cluster <span class="dot ok"></span></div>
+        <div class="t">k3s sano + kubectl</div>
+        <div class="d">Ya estaba corriendo (91 días). No se montó hoy — honesto.</div>
+      </div>
+      <div class="stat ok">
+        <div class="k">02 · image <span class="dot ok"></span></div>
+        <div class="t">Imagen en containerd</div>
+        <div class="d">Build con Docker → importada al containerd de k3s (389 MiB).</div>
+      </div>
+      <div class="stat partial">
+        <div class="k">03 · manifests <span class="dot partial"></span></div>
+        <div class="t">Deploy·Svc·Ing·Secret</div>
+        <div class="d">Secret y Deployment sólidos. Service/Ingress dan 502: sin backend HTTP.</div>
+      </div>
+      <div class="stat ok">
+        <div class="k">04 · scan <span class="dot ok"></span></div>
+        <div class="t">Escaneo real en clúster</div>
+        <div class="d">Job → Gate 1 caza 2 claves AWS → BLOCK. Logs vía kubectl.</div>
+      </div>
+      <div class="stat no">
+        <div class="k">05 · métricas <span class="dot no"></span></div>
+        <div class="t">Prometheus/Grafana</div>
+        <div class="d">No entra. OpsGuard no tiene /metrics. Es el lab 2, no deuda.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LIVE STATE -->
+  <section id="vivo">
+    <h2><span class="num">//</span> Qué hay vivo ahora mismo</h2>
+    <p class="sub">Salida literal de <span class="mono">kubectl -n opsguard get all,ingress,secret,configmap</span>. Esto sigue corriendo en tu máquina mientras lees — puedes abrir otra terminal y contrastarlo.</p>
+    <div class="code">
+      <div class="bar"><span class="title">kubectl -n opsguard get all,ingress,secret,configmap</span><button class="copy" type="button">copiar</button></div>
+<pre><code>kubectl -n opsguard get all,ingress,secret,configmap</code></pre>
+    </div>
+    <div class="code">
+      <div class="bar"><span class="title">salida real</span><button class="copy" type="button">copiar</button></div>
+<pre><code><span class="c">NAME                                   READY   STATUS    RESTARTS   AGE</span>
+pod/opsguard-runner-7ddc69655c-2kgts   <span class="g">1/1     Running</span>   0          77m
+
+<span class="c">NAME               TYPE        CLUSTER-IP     PORT(S)   AGE</span>
+service/opsguard   ClusterIP   10.43.94.180   80/TCP    77m
+
+<span class="c">NAME                              READY   UP-TO-DATE   AVAILABLE   AGE</span>
+deployment.apps/opsguard-runner   <span class="g">1/1</span>     1            1           77m
+
+<span class="c">NAME                                 CLASS     HOSTS                ADDRESS        PORTS</span>
+ingress.../opsguard                  traefik   opsguard.localhost   192.168.1.51   80
+
+<span class="c">NAME                      TYPE     DATA   AGE</span>
+secret/opsguard-secrets   Opaque   1      77m
+configmap/opsguard-scan-demo   1    74m</code></pre>
+    </div>
+    <p class="note">El <span class="mono">Job/opsguard-scan</span> ya no aparece: se autoborró con <span class="mono">ttlSecondsAfterFinished: 3600</span> (1 h tras terminar). Es correcto — un Job es de usar y tirar. Más abajo tienes el comando para relanzarlo cuando quieras.</p>
+  </section>
+
+  <!-- THE HONEST FINDING -->
+  <section id="tension">
+    <h2><span class="num">//</span> El hallazgo honesto (y por qué es lo mejor del lab)</h2>
+    <p class="sub">Esto es lo que el clúster te dijo y tu resumen mental no: OpsGuard no es un servicio.</p>
+    <div class="callout fail">
+      <p class="lbl">El Ingress devuelve HTTP 502 — a propósito</p>
+      <p>OpsGuard es una CLI batch: escanea un diff, imprime el veredicto y termina. No escucha en ningún puerto. Así que el <b>Service</b> y el <b>Ingress</b> enrutan hacia un backend que no existe. Verificado:</p>
+    </div>
+    <div class="code">
+      <div class="bar"><span class="title">curl al Ingress — comprobar el 502</span><button class="copy" type="button">copiar</button></div>
+<pre><code><span class="p">curl</span> -s -o /dev/null -w <span class="g">"HTTP %{http_code}\n"</span> \
+  -H <span class="g">"Host: opsguard.localhost"</span> http://192.168.1.51/
+
+<span class="c"># respuesta:</span>
+<span class="r">HTTP 502</span>   <span class="c"># Traefik y el Service resuelven; no hay nada escuchando detrás</span></code></pre>
+    </div>
+    <p>Traducción para entrevista: el primitivo K8s correcto para OpsGuard es un <b>Job / CronJob disparado por CI</b>, no un Deployment con Service e Ingress. El <b>Secret</b> (API key aislada, consumida por <span class="mono">envFrom</span>) y el <b>Job</b> son defendibles al 100%. El Service e Ingress se dejaron escritos como práctica de manifiestos, con el 502 a la vista y anotado en los propios ficheros. Nada maquillado.</p>
+  </section>
+
+  <!-- TIMELINE -->
+  <section id="timeline">
+    <h2><span class="num">//</span> Cómo fue, paso a paso</h2>
+    <p class="sub">La bitácora del diario. Incluye los dos tropiezos, porque replicar sin ellos te haría chocar igual.</p>
+    <ul class="tl">
+      <li>
+        <div class="time">07:59 — cluster</div>
+        <div class="ev">k3s ya estaba sano; kubectl no leía el kubeconfig</div>
+        <div class="dt">Nodo Ready desde hace 91 días. <span class="mono">/etc/rancher/k3s/k3s.yaml</span> es 0600 root, y k3s exporta un <code>KUBECONFIG</code> global que apunta ahí. Se copió a <span class="mono">~/.kube/config</span> con permisos de usuario.</div>
+      </li>
+      <li>
+        <div class="time">08:00 — image</div>
+        <div class="ev">Build con Docker, import a containerd</div>
+        <div class="dt">k3s usa containerd, no el daemon de Docker: una imagen de <code>docker build</code> no es visible sin importarla con <span class="mono">k3s ctr images import</span>.</div>
+      </li>
+      <li>
+        <div class="time">08:05 — tropiezo 1</div>
+        <div class="ev">click 8.3.1 rompe el parseo de opciones de typer 0.9.4</div>
+        <div class="dt"><span class="mono">opsguard --help</span> y <span class="mono">--path X</span> revientan. Pero la Action usa <span class="mono">opsguard scan</span> sin opciones y ese camino funciona. No se tocó: es deuda del repo, no del lab.</div>
+      </li>
+      <li>
+        <div class="time">08:08 — tropiezo 2</div>
+        <div class="ev">Gate 1 necesita un HEAD</div>
+        <div class="dt">Escanea líneas añadidas de <code>git diff HEAD</code>. Un repo recién iniciado sin commit no tiene HEAD → falla. Solución: commitear una línea base limpia y luego meter el secreto.</div>
+      </li>
+      <li>
+        <div class="time">08:12 — manifests</div>
+        <div class="ev">Namespace, Secret, Deployment, Service, Ingress aplicados</div>
+        <div class="dt">Runner <span class="mono">Running</span>, readiness OK, Secret cableado por <span class="mono">envFrom</span> (verificado en el pod).</div>
+      </li>
+      <li>
+        <div class="time">08:15 — scan</div>
+        <div class="ev">Escaneo real dentro del clúster → BLOCK</div>
+        <div class="dt">El Job caza 2 claves AWS y sale con exit≠0. El Job queda <span class="mono">Failed</span>: eso es fail-closed correcto, no un fallo.</div>
+      </li>
+    </ul>
+  </section>
+
+  <hr>
+
+  <!-- REPLICATE -->
+  <section id="replicar">
+    <h2><span class="num">$</span> Replicar desde cero</h2>
+    <p class="sub">Si borras todo (<span class="mono">kubectl delete ns opsguard</span>) y quieres reconstruirlo, esto es el camino completo. Ejecuta desde <span class="mono">projects/ops_guard/</span>.</p>
+
+    <h3>0 · kubectl operativo sin sudo (una vez)</h3>
+    <div class="code">
+      <div class="bar"><span class="title">kubeconfig de usuario</span><button class="copy" type="button">copiar</button></div>
+<pre><code>mkdir -p ~/.kube
+sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
+sudo chown $USER:$USER ~/.kube/config &amp;&amp; chmod 600 ~/.kube/config
+export KUBECONFIG=$HOME/.kube/config   <span class="c"># k3s exporta uno global que hay que pisar</span>
+kubectl get nodes</code></pre>
+    </div>
+
+    <h3>1 · construir la imagen e importarla a k3s</h3>
+    <div class="code">
+      <div class="bar"><span class="title">build + save + import</span><button class="copy" type="button">copiar</button></div>
+<pre><code>docker build -t opsguard:lab .
+docker save opsguard:lab -o /tmp/opsguard-lab.tar
+sudo k3s ctr images import /tmp/opsguard-lab.tar
+sudo k3s ctr images ls | grep opsguard   <span class="c"># verificar que está en containerd</span></code></pre>
+    </div>
+
+    <h3>2 · namespace y Secret (la key nunca va en git)</h3>
+    <div class="code">
+      <div class="bar"><span class="title">namespace + secret imperativo</span><button class="copy" type="button">copiar</button></div>
+<pre><code>kubectl apply -f deploy/k8s/00-namespace.yaml
+
+<span class="c"># Secret real, fuera de git. Gate 1 no usa la key (valor dummy vale).</span>
+<span class="c"># Para usar Gate 2 (LLM), pon aquí tu OPENROUTER_API_KEY real.</span>
+kubectl -n opsguard create secret generic opsguard-secrets \
+  --from-literal=OPENROUTER_API_KEY='dummy-not-used-by-gate1'</code></pre>
+    </div>
+
+    <h3>3 · desplegar y verificar</h3>
+    <div class="code">
+      <div class="bar"><span class="title">apply runner + service + ingress</span><button class="copy" type="button">copiar</button></div>
+<pre><code>kubectl apply -f deploy/k8s/20-deployment.yaml \
+              -f deploy/k8s/30-service.yaml \
+              -f deploy/k8s/40-ingress.yaml
+kubectl -n opsguard rollout status deploy/opsguard-runner
+kubectl -n opsguard get pods,svc,ingress</code></pre>
+    </div>
+
+    <h3>4 · lanzar el escaneo real (el Job)</h3>
+    <div class="code">
+      <div class="bar"><span class="title">configmap + job + logs</span><button class="copy" type="button">copiar</button></div>
+<pre><code>kubectl apply -f deploy/k8s/45-configmap-scan.yaml \
+              -f deploy/k8s/50-job-scan.yaml
+
+<span class="c"># el Job termina en Failed a propósito (BLOCK = exit≠0 = fail-closed)</span>
+kubectl -n opsguard wait --for=condition=failed job/opsguard-scan --timeout=60s
+kubectl -n opsguard logs job/opsguard-scan</code></pre>
+    </div>
+    <div class="code">
+      <div class="bar"><span class="title">lo que verás en los logs</span><button class="copy" type="button">copiar</button></div>
+<pre><code><span class="g">🛡️  OpsGuard-AI — Security Gate Active</span>
+
+🚨 DETECTED 2 STATIC VIOLATIONS:
+  <span class="r">[AWS Access Key]  AKIAIOSFODNN7EXAMPLE</span>          Diff
+  <span class="r">[AWS Secret Key]  wJalrXUtnFEMI/K7MDENG/bPxRf...</span>  Diff
+
+<span class="r">⛔ PIPELINE BLOCKED: SECURITY VIOLATION DETECTED</span></code></pre>
+    </div>
+  </section>
+
+  <hr>
+
+  <!-- TRASTEAR -->
+  <section id="trastear">
+    <h2><span class="num">$</span> Trastear</h2>
+    <p class="sub">Cosas para meterle mano y entender cómo responde. Todo sobre lo que ya está desplegado.</p>
+
+    <h3>Entrar en el pod runner y escanear a mano</h3>
+    <div class="code">
+      <div class="bar"><span class="title">exec interactivo</span><button class="copy" type="button">copiar</button></div>
+<pre><code>kubectl -n opsguard exec -it deploy/opsguard-runner -- sh
+<span class="c"># dentro del pod:</span>
+echo $OPENROUTER_API_KEY        <span class="c"># viene del Secret por envFrom</span>
+cd /tmp &amp;&amp; git init demo &amp;&amp; cd demo
+git config user.email t@t.co &amp;&amp; git config user.name t
+cp /app/opsguard.yml . &amp;&amp; echo ok &gt; a.py &amp;&amp; git add . &amp;&amp; git commit -qm base
+echo 'AWS_KEY="AKIAIOSFODNN7EXAMPLE"' &gt; leak.py &amp;&amp; git add leak.py
+opsguard scan                   <span class="c"># mira cómo bloquea</span></code></pre>
+    </div>
+
+    <h3>Cambiar el caso de prueba y relanzar el Job</h3>
+    <div class="code">
+      <div class="bar"><span class="title">editar el ConfigMap → recrear Job</span><button class="copy" type="button">copiar</button></div>
+<pre><code><span class="c"># edita el script del escaneo (prueba un fichero SIN secretos y mira que pase)</span>
+kubectl -n opsguard edit configmap opsguard-scan-demo
+
+kubectl -n opsguard delete job opsguard-scan --ignore-not-found
+kubectl apply -f deploy/k8s/50-job-scan.yaml
+kubectl -n opsguard logs -f job/opsguard-scan</code></pre>
+    </div>
+
+    <h3>Confirmar tú mismo el 502 del Ingress</h3>
+    <div class="code">
+      <div class="bar"><span class="title">curl</span><button class="copy" type="button">copiar</button></div>
+<pre><code>curl -s -o /dev/null -w "HTTP %{http_code}\n" \
+  -H "Host: opsguard.localhost" http://192.168.1.51/
+<span class="c"># HTTP 502 → no hay backend HTTP. Ese es el punto.</span></code></pre>
+    </div>
+
+    <h3>Ver el escalado, describe, eventos</h3>
+    <div class="code">
+      <div class="bar"><span class="title">observar el runner</span><button class="copy" type="button">copiar</button></div>
+<pre><code>kubectl -n opsguard describe deploy opsguard-runner
+kubectl -n opsguard get events --sort-by=.lastTimestamp | tail -20
+kubectl -n opsguard scale deploy/opsguard-runner --replicas=2   <span class="c"># y vuelve a 1</span></code></pre>
+    </div>
+
+    <h3>Borrar todo cuando acabes</h3>
+    <div class="code">
+      <div class="bar"><span class="title">teardown</span><button class="copy" type="button">copiar</button></div>
+<pre><code>kubectl delete ns opsguard          <span class="c"># se lleva pod, svc, ingress, secret, configmap</span>
+sudo k3s ctr images rm docker.io/library/opsguard:lab   <span class="c"># opcional: la imagen</span></code></pre>
+    </div>
+    <p class="note">El namespace <span class="mono">opsguard</span> está aislado de tu homelab (Grafana, smartctl-exporter siguen intactos en Docker). Borrarlo no toca nada más.</p>
+  </section>
+
+  <!-- DECISIONS -->
+  <section id="decisiones">
+    <h2><span class="num">//</span> Lo que decides tú (no lo hace la IA)</h2>
+    <p class="sub">El lab es materia prima. Estas dos cosas son tuyas — por eso no las toqué.</p>
+    <div class="dec">
+      <div class="card">
+        <div class="who">Decisión 1 · el post</div>
+        <p>Escribir el <b>bruto</b> del primer post de la serie con tu voz. La historia fuerte ya está: “desplegué mi herramienta en k8s y el clúster me dijo la verdad — no es un servicio, es un Job, y el Ingress me devolvió un 502 honesto”. El diario en <span class="mono">deploy/k8s/DIARIO_LAB.md</span> es tu materia prima; el borrador sale luego de <span class="mono">/linkedin-editor</span> con tu texto.</p>
+      </div>
+      <div class="card">
+        <div class="who">Decisión 2 · el CV</div>
+        <p>Si OpsGuard vuelve al CV, mi propuesta es que sea como <b>“desplegado en Kubernetes (k3s) como Job de CI con secreto gestionado”</b>, nunca como microservicio (el 502 lo desmonta en entrevista). Es una propuesta: cualquier cambio pasa por <span class="mono">_meta/cv_maestro/AGENT.md</span> y por tu instrucción explícita en otra sesión.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p>Generado tras el lab del 2026-07-04. Ficheros fuente: <span class="mono">projects/ops_guard/deploy/k8s/</span> (manifests + <span class="mono">DIARIO_LAB.md</span>). Commit <span class="mono">f916d1d</span> en el repo de OpsGuard. Nada pusheado, nada añadido al CV ni a habilidades — este lab no reclama Kubernetes en ningún sitio.</p>
+  </footer>
+</div>
+
+<script>
+  document.querySelectorAll('.code .copy').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var block = btn.closest('.code').querySelector('pre code');
+      var text = block.innerText;
+      navigator.clipboard.writeText(text).then(function () {
+        var old = btn.textContent;
+        btn.textContent = 'copiado ✓';
+        setTimeout(function () { btn.textContent = old; }, 1400);
+      }).catch(function () {
+        btn.textContent = 'error';
+        setTimeout(function () { btn.textContent = 'copiar'; }, 1400);
+      });
+    });
+  });
+</script>
