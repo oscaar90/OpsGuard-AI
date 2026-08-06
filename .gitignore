@@ -13,9 +13,13 @@ htmlcov/
 *.kate-swp
 *.swp
 
+# Apuntes personales (no publicar)
+apuntes/
+
 # Internal / sensitive documents (never publish)
 docs/*Brais*.md
 docs/*brais*.md
 docs/*oscar*.md
 docs/*Oscar*.md
+docs/repo-improvements-internal.md
 *.pdf
