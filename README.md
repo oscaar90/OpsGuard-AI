@@ -229,12 +229,12 @@ OpsGuard AI uses a **dual license model**:
 - **Open Source (AGPLv3)** for personal projects, open-source, and non-production use
 - **Commercial License** for closed corporate environments or incompatible copyleft requirements
 
-For commercial licensing: **oscar@oscarai.tech**
+For commercial licensing: **oscar@oscarsperez.com**
 
 ---
 
 <p align="center">
   <em>Built as a Master's Thesis (TFM) — graded <strong>Excellent</strong>.</em>
   <br/>
-  <a href="https://ops-guard-ai-35ac.vercel.app/">Website</a> · <a href="https://github.com/oscaar90/OpsGuard-AI/issues">Issues</a> · <a href="mailto:oscar@oscarai.tech">Contact</a>
+  <a href="https://github.com/oscaar90/OpsGuard-AI/issues">Issues</a> · <a href="mailto:oscar@oscarsperez.com">Contact</a>
 </p>
